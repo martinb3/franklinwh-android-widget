@@ -1,5 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
+    // Compose compiler for Glance's @Composable widget content.
+    alias(libs.plugins.kotlin.compose)
 }
 
 android {
@@ -35,6 +37,7 @@ tasks.withType<Test>().configureEach {
 
 dependencies {
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.androidx.glance.appwidget)
 
     // Android's bundled org.json is stubbed in local JVM tests; use the real one there.
     testImplementation(libs.junit)

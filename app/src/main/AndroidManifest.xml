@@ -6,6 +6,34 @@
 
     <application
         android:allowBackup="false"
-        android:label="@string/app_name" />
+        android:icon="@drawable/ic_battery"
+        android:label="@string/app_name"
+        android:theme="@style/Theme.Fwh">
+
+        <!-- The launcher entry lets a sideloaded install be opened once, leaving the stopped state.
+             Launchers can only start exported activities, so this must be exported while it has one. -->
+        <activity
+            android:name=".ui.WidgetConfigActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <receiver
+            android:name=".ui.FwhWidgetReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/fwh_widget_info" />
+        </receiver>
+    </application>
 
 </manifest>

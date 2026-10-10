@@ -1,4 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">FranklinWH Widget</string>
+    <string name="widget_description">Battery, solar, load and grid from your FranklinWH gateway</string>
+    <string name="config_title">Gateway</string>
+    <string name="config_host">Host or IP address</string>
+    <string name="config_host_hint">192.0.2.10</string>
+    <string name="config_port">Port</string>
+    <string name="config_test">Test connection</string>
+    <string name="config_save">Save</string>
+    <string name="config_invalid">Enter a host and a port between 1 and 65535.</string>
+    <string name="config_testing">Connecting…</string>
+    <string name="config_test_ok">Connected. Battery %1$s, solar %2$d W.</string>
+    <string name="config_test_failed">Failed: %1$s</string>
 </resources>
