@@ -6,6 +6,11 @@
     <string name="config_host">Host or IP address</string>
     <string name="config_host_hint">192.0.2.10</string>
     <string name="config_port">Port</string>
+    <string name="config_solar_capacity">Solar capacity (kW)</string>
+    <string name="config_grid_limit">Grid limit (kW)</string>
+    <string name="config_optional">Optional</string>
+    <string name="config_capacity_help">Shown as bars on larger widget sizes. Grid: 200 A at 240 V is 48 kW.</string>
+    <string name="config_capacity_invalid">Enter a number above 0, or leave blank</string>
     <string name="config_test">Test connection</string>
     <string name="config_save">Save</string>
     <string name="config_invalid">Enter a host and a port between 1 and 65535.</string>

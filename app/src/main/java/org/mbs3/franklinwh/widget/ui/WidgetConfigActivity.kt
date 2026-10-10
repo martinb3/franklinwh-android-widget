@@ -30,6 +30,8 @@ class WidgetConfigActivity : Activity() {
 
     private lateinit var hostInput: EditText
     private lateinit var portInput: EditText
+    private lateinit var solarInput: EditText
+    private lateinit var gridInput: EditText
     private lateinit var status: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,11 +46,17 @@ class WidgetConfigActivity : Activity() {
         setContentView(R.layout.activity_config)
         hostInput = findViewById(R.id.host)
         portInput = findViewById(R.id.port)
+        solarInput = findViewById(R.id.solar_capacity)
+        gridInput = findViewById(R.id.grid_limit)
         status = findViewById(R.id.status)
 
         val config = GatewayConfig.load(this)
         hostInput.setText(config.host)
         portInput.setText(config.port.toString())
+        solarInput.hint = getString(R.string.config_optional)
+        gridInput.hint = getString(R.string.config_optional)
+        config.solarCapacityKw?.let { solarInput.setText(it.toString()) }
+        config.gridLimitKw?.let { gridInput.setText(it.toString()) }
 
         findViewById<Button>(R.id.test).setOnClickListener { testConnection() }
         findViewById<Button>(R.id.save).setOnClickListener { save() }
@@ -92,8 +100,24 @@ class WidgetConfigActivity : Activity() {
         }
     }
 
+    /** Parses an optional capacity field, showing an inline error and returning false if invalid. */
+    private fun capacity(input: EditText, out: (Double?) -> Unit): Boolean = try {
+        out(GatewayConfig.parseCapacity(input.text.toString()))
+        input.error = null
+        true
+    } catch (_: IllegalArgumentException) {
+        input.error = getString(R.string.config_capacity_invalid)
+        false
+    }
+
     private fun save() {
-        val config = currentConfig() ?: return
+        val connection = currentConfig() ?: return
+        var solarKw: Double? = null
+        var gridKw: Double? = null
+        val solarOk = capacity(solarInput) { solarKw = it }
+        val gridOk = capacity(gridInput) { gridKw = it }
+        if (!solarOk || !gridOk) return
+        val config = connection.copy(solarCapacityKw = solarKw, gridLimitKw = gridKw)
         config.save(this)
         findViewById<Button>(R.id.save).isEnabled = false
         scope.launch {

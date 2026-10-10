@@ -46,6 +46,43 @@
             android:inputType="number"
             android:singleLine="true" />
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:labelFor="@id/solar_capacity"
+            android:text="@string/config_solar_capacity" />
+
+        <EditText
+            android:id="@+id/solar_capacity"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:importantForAutofill="no"
+            android:inputType="numberDecimal"
+            android:singleLine="true" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:labelFor="@id/grid_limit"
+            android:text="@string/config_grid_limit" />
+
+        <EditText
+            android:id="@+id/grid_limit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:importantForAutofill="no"
+            android:inputType="numberDecimal"
+            android:singleLine="true" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/config_capacity_help"
+            android:textAppearance="?android:attr/textAppearanceSmall" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

@@ -34,6 +34,11 @@ Requires JDK 17 or newer and the Android SDK (`ANDROID_HOME` set, or a
    battery level and solar power it read.
 3. Press **Save**. The widget fetches a reading immediately.
 
+- Optional: **Solar capacity (kW)** and **Grid limit (kW)**. When set, the
+  live view on larger widget sizes shows solar output and grid flow as bars
+  scaled to these values (for example, a 200 A service at 240 V is 48 kW).
+  Leave them blank for no bars.
+
 The same screen is reachable from the app's launcher icon and from the
 launcher's "reconfigure" action on the widget.
 

@@ -45,6 +45,7 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import org.mbs3.franklinwh.widget.R
+import org.mbs3.franklinwh.widget.data.CapacityBars
 import org.mbs3.franklinwh.widget.data.DisplayFormat
 import org.mbs3.franklinwh.widget.data.GatewayConfig
 import org.mbs3.franklinwh.widget.data.GatewayReading
@@ -67,8 +68,9 @@ class FwhWidget : GlanceAppWidget() {
             // Without it, update() re-sends the previous RemoteViews. Do not remove.
             currentState(GENERATION_KEY)
             val now = System.currentTimeMillis()
-            val state = WidgetStateFactory.build(store, GatewayConfig.load(appContext), now)
-            Body(appContext, state, now)
+            val config = GatewayConfig.load(appContext)
+            val state = WidgetStateFactory.build(store, config, now)
+            Body(appContext, state, config, now)
         }
     }
 
@@ -93,7 +95,7 @@ class FwhWidget : GlanceAppWidget() {
 }
 
 @Composable
-private fun Body(context: Context, state: WidgetState, nowMs: Long) {
+private fun Body(context: Context, state: WidgetState, config: GatewayConfig, nowMs: Long) {
     val tap: Action = when (state) {
         WidgetState.Unconfigured -> actionStartActivity(
             Intent(context, WidgetConfigActivity::class.java)
@@ -122,7 +124,7 @@ private fun Body(context: Context, state: WidgetState, nowMs: Long) {
                 when (state) {
                     WidgetState.Unconfigured -> Message("Tap to set up", null)
                     is WidgetState.NoData -> Message("No data yet", state.lastError)
-                    is WidgetState.Ready -> Ready(state, metrics)
+                    is WidgetState.Ready -> Ready(state, config, metrics)
                 }
             }
         }
@@ -154,6 +156,8 @@ private class Tile(
     val value: String,
     val title: String,
     val detail: String? = null,
+    /** Capacity bar fill (0..1), or null for no bar. */
+    val bar: Float? = null,
 )
 
 /** How the battery charge bar is placed in the header. */
@@ -173,6 +177,8 @@ private data class Metrics(
     val tiles: Tiles,
     /** Spread the header and tiles over the height with weighted spacers. */
     val spread: Boolean,
+    /** Show solar and grid capacity bars in the live view (when capacities are set). */
+    val capacityBars: Boolean,
 ) {
     companion object {
         /** Card padding, also applied in Body. */
@@ -201,13 +207,13 @@ private data class Metrics(
                 wide -> Triple(28, 22, Bar.INLINE)
                 else -> Triple(22, 18, Bar.NONE)
             }
-            return Metrics(percentSp, headerIconDp, valueSp, labelSp, iconDp, bar, tiles, spread = tall)
+            return Metrics(percentSp, headerIconDp, valueSp, labelSp, iconDp, bar, tiles, spread = tall, capacityBars = tall)
         }
     }
 }
 
 @Composable
-private fun ColumnScope.Ready(state: WidgetState.Ready, m: Metrics) {
+private fun ColumnScope.Ready(state: WidgetState.Ready, config: GatewayConfig, m: Metrics) {
     val r = state.reading
     val direction = WidgetPalette.batteryColor(r.batteryW)
 
@@ -245,14 +251,16 @@ private fun ColumnScope.Ready(state: WidgetState.Ready, m: Metrics) {
     }
     if (m.spread) Spacer(GlanceModifier.defaultWeight()) else Spacer(GlanceModifier.height(8.dp))
 
-    val tiles = if (state.isLive) liveTiles(r) else dailyTiles(r, state.averages)
+    val tiles = if (state.isLive) liveTiles(r, config, m.capacityBars) else dailyTiles(r, state.averages)
+    // Reserve the bar slot in every tile only when some tile has a bar, so tiles stay aligned.
+    val barSlot = tiles.any { it.bar != null }
     when (m.tiles) {
-        Tiles.TWO -> TileRow(tiles.take(2), m)
-        Tiles.ROW_OF_FOUR -> TileRow(tiles, m)
+        Tiles.TWO -> TileRow(tiles.take(2), m, barSlot)
+        Tiles.ROW_OF_FOUR -> TileRow(tiles, m, barSlot)
         Tiles.GRID -> {
-            TileRow(tiles.take(2), m)
+            TileRow(tiles.take(2), m, barSlot)
             Spacer(GlanceModifier.height(12.dp))
-            TileRow(tiles.drop(2), m)
+            TileRow(tiles.drop(2), m, barSlot)
         }
     }
     if (m.spread) {
@@ -262,7 +270,7 @@ private fun ColumnScope.Ready(state: WidgetState.Ready, m: Metrics) {
 }
 
 @Composable
-private fun TileRow(tiles: List<Tile>, m: Metrics) {
+private fun TileRow(tiles: List<Tile>, m: Metrics, barSlot: Boolean) {
     val labelStyle = TextStyle(color = WidgetPalette.textSecondary, fontSize = m.labelSp.sp)
     Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
         tiles.forEach { tile ->
@@ -274,6 +282,22 @@ private fun TileRow(tiles: List<Tile>, m: Metrics) {
                     style = TextStyle(color = WidgetPalette.textPrimary, fontSize = m.valueSp.sp, fontWeight = FontWeight.Medium),
                     maxLines = 1,
                 )
+                if (barSlot) {
+                    Spacer(GlanceModifier.height(4.dp))
+                    val bar = tile.bar
+                    // Inset from the tile's end so bars in adjacent tiles do not touch.
+                    Box(GlanceModifier.fillMaxWidth().height(4.dp).padding(end = 8.dp)) {
+                        if (bar != null) {
+                            LinearProgressIndicator(
+                                progress = bar,
+                                modifier = GlanceModifier.fillMaxWidth().height(4.dp).cornerRadius(2.dp),
+                                color = tile.tint,
+                                backgroundColor = WidgetPalette.track,
+                            )
+                        }
+                    }
+                    Spacer(GlanceModifier.height(4.dp))
+                }
                 Text(tile.title, style = labelStyle, maxLines = 1)
                 // A blank line when there is no detail keeps tiles the same height in both views.
                 Text(tile.detail ?: " ", style = labelStyle, maxLines = 1)
@@ -282,10 +306,16 @@ private fun TileRow(tiles: List<Tile>, m: Metrics) {
     }
 }
 
-private fun liveTiles(r: GatewayReading): List<Tile> = listOf(
-    Tile(R.drawable.ic_sun, WidgetPalette.solar, DisplayFormat.powerUnsigned(r.solarW), "Solar"),
+private fun liveTiles(r: GatewayReading, config: GatewayConfig, bars: Boolean): List<Tile> = listOf(
+    Tile(
+        R.drawable.ic_sun, WidgetPalette.solar, DisplayFormat.powerUnsigned(r.solarW), "Solar",
+        bar = if (bars) CapacityBars.solar(r.solarW, config.solarCapacityKw) else null,
+    ),
     Tile(R.drawable.ic_house, WidgetPalette.load, DisplayFormat.powerUnsigned(r.loadW), "Load"),
-    Tile(R.drawable.ic_pylon, WidgetPalette.grid, DisplayFormat.powerSigned(r.gridW), "Grid"),
+    Tile(
+        R.drawable.ic_pylon, WidgetPalette.grid, DisplayFormat.powerSigned(r.gridW), "Grid",
+        bar = if (bars) CapacityBars.grid(r.gridW, config.gridLimitKw) else null,
+    ),
     batteryTile(r, DisplayFormat.powerSigned(r.batteryW), "Battery"),
 )
 
