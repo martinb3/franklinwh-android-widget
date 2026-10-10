@@ -109,7 +109,7 @@ private fun Body(context: Context, state: WidgetState, nowMs: Long) {
             .appWidgetBackground()
             .background(WidgetPalette.card)
             .cornerRadius(20.dp)
-            .padding(14.dp)
+            .padding(Metrics.CARD_PADDING)
             .clickable(tap),
         contentAlignment = Alignment.TopEnd,
     ) {
@@ -162,7 +162,7 @@ private enum class Bar { NONE, INLINE, OWN_ROW }
 /** How the tiles are arranged. */
 private enum class Tiles { TWO, ROW_OF_FOUR, GRID }
 
-/** Per-size type and layout choices, picked once from the widget size. */
+/** Per-size type and layout choices. This is the only place widget sizes are decided. */
 private data class Metrics(
     val percentSp: Int,
     val headerIconDp: Int,
@@ -175,17 +175,33 @@ private data class Metrics(
     val spread: Boolean,
 ) {
     companion object {
-        private val COMPACT = Metrics(22, 18, 14, 10, 20, Bar.NONE, Tiles.TWO, spread = false)
-        private val WIDE = Metrics(28, 22, 14, 10, 20, Bar.INLINE, Tiles.ROW_OF_FOUR, spread = false)
-        private val TALL = Metrics(32, 24, 18, 11, 24, Bar.OWN_ROW, Tiles.GRID, spread = true)
-        private val LARGE = Metrics(36, 28, 20, 12, 28, Bar.INLINE, Tiles.ROW_OF_FOUR, spread = true)
+        /** Card padding, also applied in Body. */
+        val CARD_PADDING = 14.dp
 
         fun forSize(size: DpSize): Metrics {
             val wide = size.width >= FwhWidget.WIDE.width
-            return when {
-                size.height >= FwhWidget.TALL.height -> if (wide) LARGE else TALL
-                else -> if (wide) WIDE else COMPACT
+            val tall = size.height >= FwhWidget.TALL.height
+            val tiles = when {
+                tall -> Tiles.GRID
+                wide -> Tiles.ROW_OF_FOUR
+                else -> Tiles.TWO
             }
+            val columns = if (tiles == Tiles.ROW_OF_FOUR) 4 else 2
+            // Value, label and icon sizes follow the width each tile gets, so values never ellipsize.
+            val tileWidth = (size.width - CARD_PADDING * 2) / columns
+            val (valueSp, labelSp, iconDp) = when {
+                tileWidth >= 120.dp -> Triple(20, 12, 28)
+                tileWidth >= 80.dp -> Triple(16, 11, 24)
+                tileWidth >= 60.dp -> Triple(14, 10, 20)
+                else -> Triple(12, 10, 20)
+            }
+            val (percentSp, headerIconDp, bar) = when {
+                tall && wide -> Triple(36, 28, Bar.INLINE)
+                tall -> Triple(32, 24, Bar.OWN_ROW)
+                wide -> Triple(28, 22, Bar.INLINE)
+                else -> Triple(22, 18, Bar.NONE)
+            }
+            return Metrics(percentSp, headerIconDp, valueSp, labelSp, iconDp, bar, tiles, spread = tall)
         }
     }
 }
@@ -203,7 +219,12 @@ private fun ColumnScope.Ready(state: WidgetState.Ready, m: Metrics) {
         backgroundColor = WidgetPalette.track,
     )
 
-    if (m.spread) Spacer(GlanceModifier.defaultWeight())
+    // Glance only has equal weights, so a weight-2 gap is two weighted spacers. Outer gaps get
+    // weight 2 and the middle gap weight 1, keeping header and tiles together in the upper part.
+    if (m.spread) {
+        Spacer(GlanceModifier.defaultWeight())
+        Spacer(GlanceModifier.defaultWeight())
+    }
     Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         val (glyph, glyphTint) = WidgetPalette.headerBatteryGlyph(r.batteryW)
         Icon(glyph, glyphTint, m.headerIconDp)
@@ -230,11 +251,14 @@ private fun ColumnScope.Ready(state: WidgetState.Ready, m: Metrics) {
         Tiles.ROW_OF_FOUR -> TileRow(tiles, m)
         Tiles.GRID -> {
             TileRow(tiles.take(2), m)
-            Spacer(GlanceModifier.height(10.dp))
+            Spacer(GlanceModifier.height(12.dp))
             TileRow(tiles.drop(2), m)
         }
     }
-    if (m.spread) Spacer(GlanceModifier.defaultWeight())
+    if (m.spread) {
+        Spacer(GlanceModifier.defaultWeight())
+        Spacer(GlanceModifier.defaultWeight())
+    }
 }
 
 @Composable
