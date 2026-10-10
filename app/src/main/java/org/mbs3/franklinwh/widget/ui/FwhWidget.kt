@@ -29,6 +29,7 @@ import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.background
 import androidx.glance.currentState
 import androidx.glance.layout.Alignment
+import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
@@ -97,21 +98,37 @@ private fun Body(context: Context, state: WidgetState, nowMs: Long) {
         )
         else -> actionRunCallback<RefreshAction>()
     }
-    val centred = state !is WidgetState.Ready
-    Column(
+    val compact = LocalSize.current.width < FwhWidget.WIDE.width
+    // Glance has no per-child alignment in a Box, so the card is a TopEnd Box holding a centred
+    // Box for the content and, as its second child, the age text in the top-right corner.
+    Box(
         modifier = GlanceModifier.fillMaxSize()
             .appWidgetBackground()
             .background(WidgetPalette.card)
             .cornerRadius(20.dp)
             .padding(14.dp)
             .clickable(tap),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalAlignment = if (centred) Alignment.CenterHorizontally else Alignment.Start,
+        contentAlignment = Alignment.TopEnd,
     ) {
-        when (state) {
-            WidgetState.Unconfigured -> Message("Tap to set up", null)
-            is WidgetState.NoData -> Message("No data yet", state.lastError)
-            is WidgetState.Ready -> Ready(context, state, nowMs, compact = LocalSize.current.width < FwhWidget.WIDE.width)
+        Box(GlanceModifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(
+                modifier = GlanceModifier.fillMaxWidth(),
+                horizontalAlignment = if (state is WidgetState.Ready) Alignment.Start else Alignment.CenterHorizontally,
+            ) {
+                when (state) {
+                    WidgetState.Unconfigured -> Message("Tap to set up", null)
+                    is WidgetState.NoData -> Message("No data yet", state.lastError)
+                    is WidgetState.Ready -> Ready(state, compact)
+                }
+            }
+        }
+        if (state is WidgetState.Ready) {
+            val age = DisplayFormat.ageText(nowMs, state.reading.timestampMs, DateFormat.is24HourFormat(context))
+            Text(
+                if (state.refreshing) "$age \u00b7 refreshing\u2026" else age,
+                style = TextStyle(color = WidgetPalette.textSecondary, fontSize = 10.sp),
+                maxLines = 1,
+            )
         }
     }
 }
@@ -136,10 +153,8 @@ private class Tile(
 )
 
 @Composable
-private fun Ready(context: Context, state: WidgetState.Ready, nowMs: Long, compact: Boolean) {
+private fun Ready(state: WidgetState.Ready, compact: Boolean) {
     val r = state.reading
-    val age = DisplayFormat.ageText(nowMs, r.timestampMs, DateFormat.is24HourFormat(context))
-    val footer = if (state.refreshing) "$age \u00b7 refreshing\u2026" else age
     val direction = WidgetPalette.batteryColor(r.batteryW)
 
     Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -155,9 +170,7 @@ private fun Ready(context: Context, state: WidgetState.Ready, nowMs: Long, compa
             ),
             maxLines = 1,
         )
-        if (compact) {
-            Spacer(GlanceModifier.defaultWeight())
-        } else {
+        if (!compact) {
             Spacer(GlanceModifier.width(10.dp))
             LinearProgressIndicator(
                 progress = (r.soc / 100.0).coerceIn(0.0, 1.0).toFloat(),
@@ -165,11 +178,9 @@ private fun Ready(context: Context, state: WidgetState.Ready, nowMs: Long, compa
                 color = direction,
                 backgroundColor = WidgetPalette.track,
             )
-            Spacer(GlanceModifier.width(10.dp))
         }
-        Text(footer, style = TextStyle(color = WidgetPalette.textSecondary, fontSize = 10.sp), maxLines = 1)
     }
-    Spacer(GlanceModifier.height(12.dp))
+    Spacer(GlanceModifier.height(8.dp))
 
     val tiles = if (state.isLive) liveTiles(r) else dailyTiles(r, state.averages)
     Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
@@ -179,7 +190,7 @@ private fun Ready(context: Context, state: WidgetState.Ready, nowMs: Long, compa
                 Spacer(GlanceModifier.height(2.dp))
                 Text(
                     tile.value,
-                    style = TextStyle(color = WidgetPalette.textPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium),
+                    style = TextStyle(color = WidgetPalette.textPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium),
                     maxLines = 1,
                 )
                 val labelStyle = TextStyle(color = WidgetPalette.textSecondary, fontSize = 10.sp)
