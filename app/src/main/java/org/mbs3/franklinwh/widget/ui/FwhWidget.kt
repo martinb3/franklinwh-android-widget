@@ -198,24 +198,21 @@ private fun liveTiles(r: GatewayReading): List<Tile> = listOf(
     batteryTile(r, DisplayFormat.powerSigned(r.batteryW), "Battery"),
 )
 
-/**
- * Detail lines must fit a quarter of a 4-cell widget at 10sp (about 14 characters), so grid
- * export and battery discharge read "0.2 kWh out" rather than "exported"/"discharged".
- */
+/** Label lines are capitalised; detail lines lead with the word, then the number ("Out 0.2 kWh"). */
 private fun dailyTiles(r: GatewayReading, avg: PowerAverages?): List<Tile> = listOf(
     Tile(
         R.drawable.ic_sun, WidgetPalette.solar, DisplayFormat.energy(r.kwhSolar), "Solar",
-        avg?.let { "avg ${DisplayFormat.powerUnsigned(it.solarW)}" },
+        avg?.let { "Avg ${DisplayFormat.powerUnsigned(it.solarW)}" },
     ),
     Tile(
         R.drawable.ic_house, WidgetPalette.load, DisplayFormat.energy(r.kwhLoad), "Load",
-        avg?.let { "avg ${DisplayFormat.powerUnsigned(it.loadW)}" },
+        avg?.let { "Avg ${DisplayFormat.powerUnsigned(it.loadW)}" },
     ),
     Tile(
-        R.drawable.ic_pylon, WidgetPalette.grid, DisplayFormat.energy(r.kwhGridIn), "Imported",
-        "${DisplayFormat.energy(r.kwhGridOut)} out",
+        R.drawable.ic_pylon, WidgetPalette.grid, DisplayFormat.energy(r.kwhGridIn), "Grid in",
+        "Out ${DisplayFormat.energy(r.kwhGridOut)}",
     ),
-    batteryTile(r, DisplayFormat.energy(r.kwhBatteryCharge), "Charged", "${DisplayFormat.energy(r.kwhBatteryDischarge)} out"),
+    batteryTile(r, DisplayFormat.energy(r.kwhBatteryCharge), "Charged", "Used ${DisplayFormat.energy(r.kwhBatteryDischarge)}"),
 )
 
 private fun batteryTile(r: GatewayReading, value: String, title: String, detail: String? = null): Tile {
