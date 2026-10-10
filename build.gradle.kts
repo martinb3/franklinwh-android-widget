@@ -1,0 +1,5 @@
+plugins {
+    alias(libs.plugins.android.application) apply false
+    // AGP 9 compiles Kotlin itself (built-in Kotlin); declaring KGP here only pins its version.
+    alias(libs.plugins.kotlin.android) apply false
+}
