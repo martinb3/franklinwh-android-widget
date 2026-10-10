@@ -25,3 +25,9 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 }
+
+dependencies {
+    // Android's bundled org.json is stubbed in local JVM tests; use the real one there.
+    testImplementation(libs.junit)
+    testImplementation(libs.org.json)
+}
