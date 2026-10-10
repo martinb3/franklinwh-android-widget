@@ -26,6 +26,13 @@ android {
     }
 }
 
+// Forward the opt-in live-gateway settings (see GatewayLiveTest) into the test JVM.
+tasks.withType<Test>().configureEach {
+    systemProperty("fwh.host", System.getenv("FWH_HOST") ?: "")
+    systemProperty("fwh.port", System.getenv("FWH_PORT") ?: "")
+    testLogging.showStandardStreams = true
+}
+
 dependencies {
     // Android's bundled org.json is stubbed in local JVM tests; use the real one there.
     testImplementation(libs.junit)
