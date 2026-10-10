@@ -34,6 +34,8 @@ tasks.withType<Test>().configureEach {
 }
 
 dependencies {
+    implementation(libs.kotlinx.coroutines.android)
+
     // Android's bundled org.json is stubbed in local JVM tests; use the real one there.
     testImplementation(libs.junit)
     testImplementation(libs.org.json)
