@@ -136,7 +136,8 @@ private fun Ready(context: Context, state: WidgetState.Ready, nowMs: Long, compa
     val direction = WidgetPalette.batteryColor(r.batteryW)
 
     Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Icon(R.drawable.ic_battery, direction, if (compact) 18 else 22)
+        val (glyph, glyphTint) = WidgetPalette.headerBatteryGlyph(r.batteryW)
+        Icon(glyph, glyphTint, if (compact) 18 else 22)
         Spacer(GlanceModifier.width(4.dp))
         Text(
             DisplayFormat.soc(r.soc),
@@ -184,7 +185,7 @@ private fun liveTiles(r: GatewayReading): List<Tile> = listOf(
     Tile(R.drawable.ic_sun, WidgetPalette.solar, DisplayFormat.powerUnsigned(r.solarW), "Solar"),
     Tile(R.drawable.ic_house, WidgetPalette.load, DisplayFormat.powerUnsigned(r.loadW), "Load"),
     Tile(R.drawable.ic_pylon, WidgetPalette.grid, DisplayFormat.powerSigned(r.gridW), "Grid"),
-    Tile(R.drawable.ic_battery, WidgetPalette.batteryColor(r.batteryW), DisplayFormat.powerSigned(r.batteryW), "Battery"),
+    batteryTile(r, DisplayFormat.powerSigned(r.batteryW), "Battery"),
 )
 
 /** Labels stay short (about 14 characters) so they fit a quarter of a 4-cell widget. */
@@ -201,11 +202,16 @@ private fun dailyTiles(r: GatewayReading, avg: PowerAverages?): List<Tile> = lis
         R.drawable.ic_pylon, WidgetPalette.grid, DisplayFormat.energy(r.kwhGridIn),
         "In \u00b7 ${DisplayFormat.kwhNumber(r.kwhGridOut)} out",
     ),
-    Tile(
-        R.drawable.ic_battery, WidgetPalette.batteryColor(r.batteryW), DisplayFormat.energy(r.kwhBatteryCharge),
+    batteryTile(
+        r, DisplayFormat.energy(r.kwhBatteryCharge),
         "Chg \u00b7 ${DisplayFormat.kwhNumber(r.kwhBatteryDischarge)} used",
     ),
 )
+
+private fun batteryTile(r: GatewayReading, value: String, label: String): Tile {
+    val (glyph, tint) = WidgetPalette.tileBatteryGlyph(r.batteryW)
+    return Tile(glyph, tint, value, label)
+}
 
 @Composable
 private fun Icon(resId: Int, tint: ColorProvider, sizeDp: Int) {

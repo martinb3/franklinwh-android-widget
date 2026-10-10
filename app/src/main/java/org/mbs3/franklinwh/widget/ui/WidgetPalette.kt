@@ -3,6 +3,7 @@ package org.mbs3.franklinwh.widget.ui
 import androidx.compose.ui.graphics.Color
 import androidx.glance.color.ColorProvider
 import androidx.glance.unit.ColorProvider
+import org.mbs3.franklinwh.widget.R
 import org.mbs3.franklinwh.widget.data.DisplayFormat
 
 /**
@@ -25,8 +26,23 @@ object WidgetPalette {
 
     /** Battery accent by direction; [batteryW] is positive when discharging. */
     fun batteryColor(batteryW: Double): ColorProvider = when {
-        batteryW < -DisplayFormat.DEADBAND_W -> charging
+        isCharging(batteryW) -> charging
         batteryW > DisplayFormat.DEADBAND_W -> discharging
         else -> idle
     }
+
+    private fun isCharging(batteryW: Double) = batteryW < -DisplayFormat.DEADBAND_W
+
+    /**
+     * Header battery icon: a green bolt glyph while charging, otherwise a neutral plain battery.
+     * The charge bar already carries the direction colour, so the icon does not repeat amber.
+     */
+    fun headerBatteryGlyph(batteryW: Double): Pair<Int, ColorProvider> =
+        if (isCharging(batteryW)) R.drawable.ic_battery_charging to charging
+        else R.drawable.ic_battery to textSecondary
+
+    /** Battery tile icon: tinted by direction, with the bolt glyph while charging. */
+    fun tileBatteryGlyph(batteryW: Double): Pair<Int, ColorProvider> =
+        (if (isCharging(batteryW)) R.drawable.ic_battery_charging else R.drawable.ic_battery) to
+            batteryColor(batteryW)
 }

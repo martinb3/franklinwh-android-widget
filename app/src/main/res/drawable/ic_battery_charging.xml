@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Charging battery: the ic_battery outline with a lightning bolt inside. Untinted. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M9,2h6v2h2c0.55,0 1,0.45 1,1v16c0,0.55 -0.45,1 -1,1H7c-0.55,0 -1,-0.45 -1,-1V5c0,-0.55 0.45,-1 1,-1h2V2zM8,6v14h8V6H8z" />
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M13.2,7L9,13.6h2.6L10.8,19L15,12.4h-2.6z" />
+</vector>
