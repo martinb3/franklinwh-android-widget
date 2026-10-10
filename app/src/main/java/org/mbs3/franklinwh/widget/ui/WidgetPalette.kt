@@ -15,6 +15,8 @@ object WidgetPalette {
     val card: ColorProvider = ColorProvider(day = Color(0xA6FFFFFF), night = Color(0x8C000000))
     val textPrimary: ColorProvider = ColorProvider(day = Color(0xFF1B1B1F), night = Color(0xFFFFFFFF))
     val textSecondary: ColorProvider = ColorProvider(day = Color(0xB31B1B1F), night = Color(0xB3FFFFFF))
+    /** Opaque neutral for icons. Icon tints must be opaque: a translucent tint blends with the drawable. */
+    val iconNeutral: ColorProvider = ColorProvider(day = Color(0xFF5F6368), night = Color(0xFFB3B3B3))
     val track: ColorProvider = ColorProvider(day = Color(0x331B1B1F), night = Color(0x33FFFFFF))
 
     val solar: ColorProvider = ColorProvider(day = Color(0xFFC77800), night = Color(0xFFFFB300))
@@ -39,7 +41,7 @@ object WidgetPalette {
      */
     fun headerBatteryGlyph(batteryW: Double): Pair<Int, ColorProvider> =
         if (isCharging(batteryW)) R.drawable.ic_battery_charging to charging
-        else R.drawable.ic_battery to textSecondary
+        else R.drawable.ic_battery to iconNeutral
 
     /** Battery tile icon: tinted by direction, with the bolt glyph while charging. */
     fun tileBatteryGlyph(batteryW: Double): Pair<Int, ColorProvider> =

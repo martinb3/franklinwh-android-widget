@@ -6,7 +6,7 @@
 
     <application
         android:allowBackup="false"
-        android:icon="@drawable/ic_battery"
+        android:icon="@drawable/ic_launcher_battery"
         android:label="@string/app_name"
         android:theme="@style/Theme.Fwh">
 

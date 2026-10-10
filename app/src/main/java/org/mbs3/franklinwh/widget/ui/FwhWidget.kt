@@ -118,7 +118,7 @@ private fun Body(context: Context, state: WidgetState, nowMs: Long) {
 
 @Composable
 private fun Message(title: String, detail: String?) {
-    Icon(R.drawable.ic_battery, WidgetPalette.idle, 28)
+    Icon(R.drawable.ic_battery, WidgetPalette.iconNeutral, 28)
     Spacer(GlanceModifier.height(6.dp))
     Text(title, style = TextStyle(color = WidgetPalette.textPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium))
     if (detail != null) {

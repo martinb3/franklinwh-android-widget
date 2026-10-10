@@ -7,7 +7,7 @@
     android:minHeight="110dp"
     android:minResizeWidth="110dp"
     android:minResizeHeight="40dp"
-    android:previewImage="@drawable/ic_battery"
+    android:previewImage="@drawable/ic_launcher_battery"
     android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="0"
     android:widgetCategory="home_screen"
