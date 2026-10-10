@@ -30,7 +30,6 @@ import androidx.glance.background
 import androidx.glance.currentState
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Column
-import androidx.glance.layout.ColumnScope
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
@@ -106,7 +105,7 @@ private fun Body(context: Context, state: WidgetState, nowMs: Long) {
             .cornerRadius(20.dp)
             .padding(14.dp)
             .clickable(tap),
-        verticalAlignment = if (centred) Alignment.CenterVertically else Alignment.Top,
+        verticalAlignment = Alignment.CenterVertically,
         horizontalAlignment = if (centred) Alignment.CenterHorizontally else Alignment.Start,
     ) {
         when (state) {
@@ -130,7 +129,7 @@ private fun Message(title: String, detail: String?) {
 private class Tile(val icon: Int, val tint: ColorProvider, val value: String, val label: String)
 
 @Composable
-private fun ColumnScope.Ready(context: Context, state: WidgetState.Ready, nowMs: Long, compact: Boolean) {
+private fun Ready(context: Context, state: WidgetState.Ready, nowMs: Long, compact: Boolean) {
     val r = state.reading
     val age = DisplayFormat.ageText(nowMs, r.timestampMs, DateFormat.is24HourFormat(context))
     val footer = if (state.refreshing) "$age \u00b7 refreshing\u2026" else age
@@ -162,7 +161,7 @@ private fun ColumnScope.Ready(context: Context, state: WidgetState.Ready, nowMs:
         }
         Text(footer, style = TextStyle(color = WidgetPalette.textSecondary, fontSize = 10.sp), maxLines = 1)
     }
-    Spacer(GlanceModifier.defaultWeight())
+    Spacer(GlanceModifier.height(12.dp))
 
     val tiles = if (state.isLive) liveTiles(r) else dailyTiles(r, state.averages)
     Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {

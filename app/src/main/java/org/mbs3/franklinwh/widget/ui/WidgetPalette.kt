@@ -11,9 +11,9 @@ import org.mbs3.franklinwh.widget.data.DisplayFormat
  * the light card, where the bright shades would be too faint to read.
  */
 object WidgetPalette {
-    val card: ColorProvider = ColorProvider(day = Color(0xC0FFFFFF), night = Color(0xB3000000))
+    val card: ColorProvider = ColorProvider(day = Color(0xA6FFFFFF), night = Color(0x8C000000))
     val textPrimary: ColorProvider = ColorProvider(day = Color(0xFF1B1B1F), night = Color(0xFFFFFFFF))
-    val textSecondary: ColorProvider = ColorProvider(day = Color(0x991B1B1F), night = Color(0xB3FFFFFF))
+    val textSecondary: ColorProvider = ColorProvider(day = Color(0xB31B1B1F), night = Color(0xB3FFFFFF))
     val track: ColorProvider = ColorProvider(day = Color(0x331B1B1F), night = Color(0x33FFFFFF))
 
     val solar: ColorProvider = ColorProvider(day = Color(0xFFC77800), night = Color(0xFFFFB300))
