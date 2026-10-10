@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Transmission tower: two splayed legs, three crossarms, cross bracing. Untinted. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:strokeColor="#FF000000"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M7,22.5L11,2.5H13L17,22.5M4,6.5H20M5,10.5H19M7,14.5H17M9.4,14.5L16,22.5M14.6,14.5L8,22.5" />
+</vector>

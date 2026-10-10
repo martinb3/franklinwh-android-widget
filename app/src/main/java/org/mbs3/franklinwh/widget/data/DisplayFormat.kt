@@ -37,9 +37,12 @@ object DisplayFormat {
     fun soc(percent: Double): String = "${percent.roundToInt()}%"
 
     /** Energy with one decimal: "10.3 kWh". */
-    fun energy(kwh: Double): String {
+    fun energy(kwh: Double): String = "${kwhNumber(kwh)} kWh"
+
+    /** Energy number without the unit, for secondary labels: "0.2". */
+    fun kwhNumber(kwh: Double): String {
         val t = roundTenths(kwh * 10.0)
-        return "${if (t < 0) MINUS.toString() else ""}${formatTenths(abs(t))} kWh"
+        return "${if (t < 0) MINUS.toString() else ""}${formatTenths(abs(t))}"
     }
 
     /**

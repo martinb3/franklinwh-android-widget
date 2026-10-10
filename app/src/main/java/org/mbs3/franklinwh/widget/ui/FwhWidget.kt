@@ -10,12 +10,15 @@ import androidx.compose.ui.unit.sp
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
-import androidx.glance.GlanceTheme
+import androidx.glance.ColorFilter
+import androidx.glance.Image
+import androidx.glance.ImageProvider
 import androidx.glance.LocalSize
 import androidx.glance.action.Action
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetManager
+import androidx.glance.appwidget.LinearProgressIndicator
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.action.actionStartActivity
@@ -27,14 +30,20 @@ import androidx.glance.background
 import androidx.glance.currentState
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Column
+import androidx.glance.layout.ColumnScope
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
+import androidx.glance.layout.height
+import androidx.glance.layout.size
+import androidx.glance.layout.width
 import androidx.glance.layout.padding
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
+import androidx.glance.unit.ColorProvider
+import org.mbs3.franklinwh.widget.R
 import org.mbs3.franklinwh.widget.data.DisplayFormat
 import org.mbs3.franklinwh.widget.data.GatewayConfig
 import org.mbs3.franklinwh.widget.data.GatewayReading
@@ -58,9 +67,7 @@ class FwhWidget : GlanceAppWidget() {
             currentState(GENERATION_KEY)
             val now = System.currentTimeMillis()
             val state = WidgetStateFactory.build(store, GatewayConfig.load(appContext), now)
-            GlanceTheme {
-                Body(appContext, state, now)
-            }
+            Body(appContext, state, now)
         }
     }
 
@@ -91,14 +98,16 @@ private fun Body(context: Context, state: WidgetState, nowMs: Long) {
         )
         else -> actionRunCallback<RefreshAction>()
     }
+    val centred = state !is WidgetState.Ready
     Column(
         modifier = GlanceModifier.fillMaxSize()
             .appWidgetBackground()
-            .background(GlanceTheme.colors.widgetBackground)
-            .cornerRadius(16.dp)
-            .padding(10.dp)
+            .background(WidgetPalette.card)
+            .cornerRadius(20.dp)
+            .padding(14.dp)
             .clickable(tap),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = if (centred) Alignment.CenterVertically else Alignment.Top,
+        horizontalAlignment = if (centred) Alignment.CenterHorizontally else Alignment.Start,
     ) {
         when (state) {
             WidgetState.Unconfigured -> Message("Tap to set up", null)
@@ -110,80 +119,101 @@ private fun Body(context: Context, state: WidgetState, nowMs: Long) {
 
 @Composable
 private fun Message(title: String, detail: String?) {
-    Text(title, style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 16.sp, fontWeight = FontWeight.Medium))
+    Icon(R.drawable.ic_battery, WidgetPalette.idle, 28)
+    Spacer(GlanceModifier.height(6.dp))
+    Text(title, style = TextStyle(color = WidgetPalette.textPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium))
     if (detail != null) {
-        Text(detail, style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp), maxLines = 1)
+        Text(detail, style = TextStyle(color = WidgetPalette.textSecondary, fontSize = 11.sp), maxLines = 1)
     }
 }
 
+private class Tile(val icon: Int, val tint: ColorProvider, val value: String, val label: String)
+
 @Composable
-private fun Ready(context: Context, state: WidgetState.Ready, nowMs: Long, compact: Boolean) {
+private fun ColumnScope.Ready(context: Context, state: WidgetState.Ready, nowMs: Long, compact: Boolean) {
     val r = state.reading
-    val soc = DisplayFormat.soc(r.soc)
     val age = DisplayFormat.ageText(nowMs, r.timestampMs, DateFormat.is24HourFormat(context))
     val footer = if (state.refreshing) "$age \u00b7 refreshing\u2026" else age
-    val rows = if (state.isLive) liveRows(r, compact) else longRows(r, state.averages, compact)
-    if (compact) {
-        Soc(soc)
-        rows.forEach { (label, value) -> StatRow(label, value) }
-        Footer(footer)
-    } else {
-        // Header row keeps the four stat rows within a 2-cell height.
-        Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Soc(soc)
-            Spacer(GlanceModifier.defaultWeight())
-            Footer(footer)
-        }
-        rows.forEach { (label, value) -> StatRow(label, value) }
-    }
-}
+    val direction = WidgetPalette.batteryColor(r.batteryW)
 
-@Composable
-private fun Soc(text: String) {
-    Text(text, style = TextStyle(color = GlanceTheme.colors.primary, fontSize = 22.sp, fontWeight = FontWeight.Bold))
-}
-
-@Composable
-private fun Footer(text: String) {
-    Text(text, style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 10.sp), maxLines = 1)
-}
-
-private fun liveRows(r: GatewayReading, compact: Boolean): List<Pair<String, String>> {
-    val rows = listOf(
-        "Solar" to DisplayFormat.powerUnsigned(r.solarW),
-        "Load" to DisplayFormat.powerUnsigned(r.loadW),
-        "Grid" to DisplayFormat.powerSigned(r.gridW),
-        "Battery" to DisplayFormat.powerSigned(r.batteryW),
-    )
-    return if (compact) rows.take(2) else rows
-}
-
-private fun longRows(r: GatewayReading, avg: PowerAverages?, compact: Boolean): List<Pair<String, String>> {
-    fun withAvg(kwh: Double, avgW: Double?) =
-        DisplayFormat.energy(kwh) + (avgW?.let { " (avg ${DisplayFormat.powerUnsigned(it)})" } ?: "")
-    if (compact) {
-        return listOf(
-            "Solar" to DisplayFormat.energy(r.kwhSolar),
-            "Load" to DisplayFormat.energy(r.kwhLoad),
-        )
-    }
-    return listOf(
-        "Solar" to withAvg(r.kwhSolar, avg?.solarW),
-        "Load" to withAvg(r.kwhLoad, avg?.loadW),
-        "Grid" to "in ${DisplayFormat.energy(r.kwhGridIn)} / out ${DisplayFormat.energy(r.kwhGridOut)}",
-        "Battery" to "chg ${DisplayFormat.energy(r.kwhBatteryCharge)} / dis ${DisplayFormat.energy(r.kwhBatteryDischarge)}",
-    )
-}
-
-@Composable
-private fun StatRow(label: String, value: String) {
-    Row(GlanceModifier.fillMaxWidth()) {
+    Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Icon(R.drawable.ic_battery, direction, if (compact) 18 else 22)
+        Spacer(GlanceModifier.width(4.dp))
         Text(
-            label,
-            modifier = GlanceModifier.defaultWeight(),
-            style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp),
+            DisplayFormat.soc(r.soc),
+            style = TextStyle(
+                color = WidgetPalette.textPrimary,
+                fontSize = if (compact) 22.sp else 28.sp,
+                fontWeight = FontWeight.Bold,
+            ),
             maxLines = 1,
         )
-        Text(value, style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 12.sp), maxLines = 1)
+        if (compact) {
+            Spacer(GlanceModifier.defaultWeight())
+        } else {
+            Spacer(GlanceModifier.width(10.dp))
+            LinearProgressIndicator(
+                progress = (r.soc / 100.0).coerceIn(0.0, 1.0).toFloat(),
+                modifier = GlanceModifier.defaultWeight().height(6.dp).cornerRadius(3.dp),
+                color = direction,
+                backgroundColor = WidgetPalette.track,
+            )
+            Spacer(GlanceModifier.width(10.dp))
+        }
+        Text(footer, style = TextStyle(color = WidgetPalette.textSecondary, fontSize = 10.sp), maxLines = 1)
     }
+    Spacer(GlanceModifier.defaultWeight())
+
+    val tiles = if (state.isLive) liveTiles(r) else dailyTiles(r, state.averages)
+    Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+        (if (compact) tiles.take(2) else tiles).forEach { tile ->
+            Column(GlanceModifier.defaultWeight()) {
+                Icon(tile.icon, tile.tint, 20)
+                Spacer(GlanceModifier.height(2.dp))
+                Text(
+                    tile.value,
+                    style = TextStyle(color = WidgetPalette.textPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium),
+                    maxLines = 1,
+                )
+                Text(tile.label, style = TextStyle(color = WidgetPalette.textSecondary, fontSize = 10.sp), maxLines = 1)
+            }
+        }
+    }
+}
+
+private fun liveTiles(r: GatewayReading): List<Tile> = listOf(
+    Tile(R.drawable.ic_sun, WidgetPalette.solar, DisplayFormat.powerUnsigned(r.solarW), "Solar"),
+    Tile(R.drawable.ic_house, WidgetPalette.load, DisplayFormat.powerUnsigned(r.loadW), "Load"),
+    Tile(R.drawable.ic_pylon, WidgetPalette.grid, DisplayFormat.powerSigned(r.gridW), "Grid"),
+    Tile(R.drawable.ic_battery, WidgetPalette.batteryColor(r.batteryW), DisplayFormat.powerSigned(r.batteryW), "Battery"),
+)
+
+/** Labels stay short (about 14 characters) so they fit a quarter of a 4-cell widget. */
+private fun dailyTiles(r: GatewayReading, avg: PowerAverages?): List<Tile> = listOf(
+    Tile(
+        R.drawable.ic_sun, WidgetPalette.solar, DisplayFormat.energy(r.kwhSolar),
+        avg?.let { "avg ${DisplayFormat.powerUnsigned(it.solarW)}" } ?: "Solar",
+    ),
+    Tile(
+        R.drawable.ic_house, WidgetPalette.load, DisplayFormat.energy(r.kwhLoad),
+        avg?.let { "avg ${DisplayFormat.powerUnsigned(it.loadW)}" } ?: "Load",
+    ),
+    Tile(
+        R.drawable.ic_pylon, WidgetPalette.grid, DisplayFormat.energy(r.kwhGridIn),
+        "In \u00b7 ${DisplayFormat.kwhNumber(r.kwhGridOut)} out",
+    ),
+    Tile(
+        R.drawable.ic_battery, WidgetPalette.batteryColor(r.batteryW), DisplayFormat.energy(r.kwhBatteryCharge),
+        "Chg \u00b7 ${DisplayFormat.kwhNumber(r.kwhBatteryDischarge)} used",
+    ),
+)
+
+@Composable
+private fun Icon(resId: Int, tint: ColorProvider, sizeDp: Int) {
+    Image(
+        provider = ImageProvider(resId),
+        contentDescription = null,
+        modifier = GlanceModifier.size(sizeDp.dp),
+        colorFilter = ColorFilter.tint(tint),
+    )
 }

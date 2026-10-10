@@ -37,6 +37,7 @@ class DisplayFormatTest {
         assertEquals("10.3 kWh", DisplayFormat.energy(10.3))
         assertEquals("26.0 kWh", DisplayFormat.energy(25.96))
         assertEquals("0.0 kWh", DisplayFormat.energy(0.0))
+        assertEquals("0.2", DisplayFormat.kwhNumber(0.15))
     }
 
     private val zone = ZoneId.of("America/Chicago")
