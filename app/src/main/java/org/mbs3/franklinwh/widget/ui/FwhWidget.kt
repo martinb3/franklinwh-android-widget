@@ -31,6 +31,7 @@ import androidx.glance.currentState
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
+import androidx.glance.layout.ColumnScope
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
@@ -54,7 +55,7 @@ import org.mbs3.franklinwh.widget.data.WidgetStateFactory
 
 class FwhWidget : GlanceAppWidget() {
 
-    override val sizeMode = SizeMode.Responsive(setOf(COMPACT, WIDE))
+    override val sizeMode = SizeMode.Responsive(setOf(COMPACT, WIDE, TALL, LARGE))
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val appContext = context.applicationContext
@@ -74,6 +75,8 @@ class FwhWidget : GlanceAppWidget() {
     companion object {
         val COMPACT = DpSize(110.dp, 110.dp)
         val WIDE = DpSize(250.dp, 110.dp)
+        val TALL = DpSize(110.dp, 220.dp)
+        val LARGE = DpSize(250.dp, 220.dp)
 
         /** See provideGlance: changing this forces running sessions to recompose. */
         private val GENERATION_KEY = longPreferencesKey("generation")
@@ -98,7 +101,7 @@ private fun Body(context: Context, state: WidgetState, nowMs: Long) {
         )
         else -> actionRunCallback<RefreshAction>()
     }
-    val compact = LocalSize.current.width < FwhWidget.WIDE.width
+    val metrics = Metrics.forSize(LocalSize.current)
     // Glance has no per-child alignment in a Box, so the card is a TopEnd Box holding a centred
     // Box for the content and, as its second child, the age text in the top-right corner.
     Box(
@@ -111,14 +114,15 @@ private fun Body(context: Context, state: WidgetState, nowMs: Long) {
         contentAlignment = Alignment.TopEnd,
     ) {
         Box(GlanceModifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            val ready = state is WidgetState.Ready
             Column(
-                modifier = GlanceModifier.fillMaxWidth(),
-                horizontalAlignment = if (state is WidgetState.Ready) Alignment.Start else Alignment.CenterHorizontally,
+                modifier = if (ready && metrics.spread) GlanceModifier.fillMaxSize() else GlanceModifier.fillMaxWidth(),
+                horizontalAlignment = if (ready) Alignment.Start else Alignment.CenterHorizontally,
             ) {
                 when (state) {
                     WidgetState.Unconfigured -> Message("Tap to set up", null)
                     is WidgetState.NoData -> Message("No data yet", state.lastError)
-                    is WidgetState.Ready -> Ready(state, compact)
+                    is WidgetState.Ready -> Ready(state, metrics)
                 }
             }
         }
@@ -152,48 +156,100 @@ private class Tile(
     val detail: String? = null,
 )
 
+/** How the battery charge bar is placed in the header. */
+private enum class Bar { NONE, INLINE, OWN_ROW }
+
+/** How the tiles are arranged. */
+private enum class Tiles { TWO, ROW_OF_FOUR, GRID }
+
+/** Per-size type and layout choices, picked once from the widget size. */
+private data class Metrics(
+    val percentSp: Int,
+    val headerIconDp: Int,
+    val valueSp: Int,
+    val labelSp: Int,
+    val iconDp: Int,
+    val bar: Bar,
+    val tiles: Tiles,
+    /** Spread the header and tiles over the height with weighted spacers. */
+    val spread: Boolean,
+) {
+    companion object {
+        private val COMPACT = Metrics(22, 18, 14, 10, 20, Bar.NONE, Tiles.TWO, spread = false)
+        private val WIDE = Metrics(28, 22, 14, 10, 20, Bar.INLINE, Tiles.ROW_OF_FOUR, spread = false)
+        private val TALL = Metrics(32, 24, 18, 11, 24, Bar.OWN_ROW, Tiles.GRID, spread = true)
+        private val LARGE = Metrics(36, 28, 20, 12, 28, Bar.INLINE, Tiles.ROW_OF_FOUR, spread = true)
+
+        fun forSize(size: DpSize): Metrics {
+            val wide = size.width >= FwhWidget.WIDE.width
+            return when {
+                size.height >= FwhWidget.TALL.height -> if (wide) LARGE else TALL
+                else -> if (wide) WIDE else COMPACT
+            }
+        }
+    }
+}
+
 @Composable
-private fun Ready(state: WidgetState.Ready, compact: Boolean) {
+private fun ColumnScope.Ready(state: WidgetState.Ready, m: Metrics) {
     val r = state.reading
     val direction = WidgetPalette.batteryColor(r.batteryW)
 
+    @Composable
+    fun ChargeBar(modifier: GlanceModifier) = LinearProgressIndicator(
+        progress = (r.soc / 100.0).coerceIn(0.0, 1.0).toFloat(),
+        modifier = modifier.height(6.dp).cornerRadius(3.dp),
+        color = direction,
+        backgroundColor = WidgetPalette.track,
+    )
+
+    if (m.spread) Spacer(GlanceModifier.defaultWeight())
     Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         val (glyph, glyphTint) = WidgetPalette.headerBatteryGlyph(r.batteryW)
-        Icon(glyph, glyphTint, if (compact) 18 else 22)
+        Icon(glyph, glyphTint, m.headerIconDp)
         Spacer(GlanceModifier.width(4.dp))
         Text(
             DisplayFormat.soc(r.soc),
-            style = TextStyle(
-                color = WidgetPalette.textPrimary,
-                fontSize = if (compact) 22.sp else 28.sp,
-                fontWeight = FontWeight.Bold,
-            ),
+            style = TextStyle(color = WidgetPalette.textPrimary, fontSize = m.percentSp.sp, fontWeight = FontWeight.Bold),
             maxLines = 1,
         )
-        if (!compact) {
+        if (m.bar == Bar.INLINE) {
             Spacer(GlanceModifier.width(10.dp))
-            LinearProgressIndicator(
-                progress = (r.soc / 100.0).coerceIn(0.0, 1.0).toFloat(),
-                modifier = GlanceModifier.defaultWeight().height(6.dp).cornerRadius(3.dp),
-                color = direction,
-                backgroundColor = WidgetPalette.track,
-            )
+            ChargeBar(GlanceModifier.defaultWeight())
         }
     }
-    Spacer(GlanceModifier.height(8.dp))
+    if (m.bar == Bar.OWN_ROW) {
+        Spacer(GlanceModifier.height(6.dp))
+        ChargeBar(GlanceModifier.fillMaxWidth())
+    }
+    if (m.spread) Spacer(GlanceModifier.defaultWeight()) else Spacer(GlanceModifier.height(8.dp))
 
     val tiles = if (state.isLive) liveTiles(r) else dailyTiles(r, state.averages)
-    Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
-        (if (compact) tiles.take(2) else tiles).forEach { tile ->
+    when (m.tiles) {
+        Tiles.TWO -> TileRow(tiles.take(2), m)
+        Tiles.ROW_OF_FOUR -> TileRow(tiles, m)
+        Tiles.GRID -> {
+            TileRow(tiles.take(2), m)
+            Spacer(GlanceModifier.height(10.dp))
+            TileRow(tiles.drop(2), m)
+        }
+    }
+    if (m.spread) Spacer(GlanceModifier.defaultWeight())
+}
+
+@Composable
+private fun TileRow(tiles: List<Tile>, m: Metrics) {
+    val labelStyle = TextStyle(color = WidgetPalette.textSecondary, fontSize = m.labelSp.sp)
+    Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+        tiles.forEach { tile ->
             Column(GlanceModifier.defaultWeight()) {
-                Icon(tile.icon, tile.tint, 20)
+                Icon(tile.icon, tile.tint, m.iconDp)
                 Spacer(GlanceModifier.height(2.dp))
                 Text(
                     tile.value,
-                    style = TextStyle(color = WidgetPalette.textPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium),
+                    style = TextStyle(color = WidgetPalette.textPrimary, fontSize = m.valueSp.sp, fontWeight = FontWeight.Medium),
                     maxLines = 1,
                 )
-                val labelStyle = TextStyle(color = WidgetPalette.textSecondary, fontSize = 10.sp)
                 Text(tile.title, style = labelStyle, maxLines = 1)
                 // A blank line when there is no detail keeps tiles the same height in both views.
                 Text(tile.detail ?: " ", style = labelStyle, maxLines = 1)
