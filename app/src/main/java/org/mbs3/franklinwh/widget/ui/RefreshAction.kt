@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.glance.GlanceId
 import androidx.glance.action.ActionParameters
 import androidx.glance.appwidget.action.ActionCallback
-import androidx.glance.appwidget.updateAll
 import org.mbs3.franklinwh.widget.data.ReadingStore
 import org.mbs3.franklinwh.widget.work.RefreshScheduler
 
@@ -17,7 +16,7 @@ class RefreshAction : ActionCallback {
     companion object {
         suspend fun requestRefresh(context: Context) {
             ReadingStore(context).setRefreshing(System.currentTimeMillis())
-            FwhWidget().updateAll(context)
+            FwhWidget.redrawAll(context)
             RefreshScheduler.refreshNow(context)
         }
     }

@@ -7,7 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
@@ -15,12 +15,14 @@ import androidx.glance.LocalSize
 import androidx.glance.action.Action
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.appWidgetBackground
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
+import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.background
 import androidx.glance.currentState
 import androidx.glance.layout.Alignment
@@ -49,9 +51,11 @@ class FwhWidget : GlanceAppWidget() {
         val appContext = context.applicationContext
         val store = ReadingStore(appContext)
         provideContent {
-            // Reading the Glance state subscribes this content to update()/updateAll(), so the
-            // store is re-read on every update of a running session.
-            currentState<Preferences>()
+            // A running Glance session only recomposes when its Glance state changes, and our
+            // data lives in ReadingStore, not Glance state. redrawAll() bumps this key so each
+            // update produces a new state value; reading it here makes that dependency explicit.
+            // Without it, update() re-sends the previous RemoteViews. Do not remove.
+            currentState(GENERATION_KEY)
             val now = System.currentTimeMillis()
             val state = WidgetStateFactory.build(store, GatewayConfig.load(appContext), now)
             GlanceTheme {
@@ -63,6 +67,18 @@ class FwhWidget : GlanceAppWidget() {
     companion object {
         val COMPACT = DpSize(110.dp, 110.dp)
         val WIDE = DpSize(250.dp, 110.dp)
+
+        /** See provideGlance: changing this forces running sessions to recompose. */
+        private val GENERATION_KEY = longPreferencesKey("generation")
+
+        /** Redraws every placed widget from the current ReadingStore contents. Use instead of updateAll(). */
+        suspend fun redrawAll(context: Context) {
+            val widget = FwhWidget()
+            GlanceAppWidgetManager(context).getGlanceIds(FwhWidget::class.java).forEach { id ->
+                updateAppWidgetState(context, id) { it[GENERATION_KEY] = (it[GENERATION_KEY] ?: 0L) + 1 }
+                widget.update(context, id)
+            }
+        }
     }
 }
 

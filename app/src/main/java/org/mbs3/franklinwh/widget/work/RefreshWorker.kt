@@ -4,7 +4,6 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
-import androidx.glance.appwidget.updateAll
 import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
@@ -17,7 +16,7 @@ class RefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorke
 
     override suspend fun doWork(): Result {
         val result = GatewayRefresher.refreshOnce(applicationContext)
-        FwhWidget().updateAll(applicationContext)
+        FwhWidget.redrawAll(applicationContext)
         return when (result) {
             is GatewayRefresher.Result.Success -> {
                 RefreshScheduler.redrawWhenLiveExpires(applicationContext)
