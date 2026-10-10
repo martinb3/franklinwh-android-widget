@@ -12,4 +12,6 @@
     <string name="config_testing">Connecting…</string>
     <string name="config_test_ok">Connected. Battery %1$s, solar %2$d W.</string>
     <string name="config_test_failed">Failed: %1$s</string>
+    <string name="refresh_channel">Background refresh</string>
+    <string name="refresh_notification">Refreshing battery status</string>
 </resources>

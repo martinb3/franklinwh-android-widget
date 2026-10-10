@@ -38,6 +38,7 @@ tasks.withType<Test>().configureEach {
 dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.work.runtime.ktx)
 
     // Android's bundled org.json is stubbed in local JVM tests; use the real one there.
     testImplementation(libs.junit)

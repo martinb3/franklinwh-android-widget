@@ -7,10 +7,8 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -21,6 +19,7 @@ import org.mbs3.franklinwh.widget.data.GatewayReading
 import org.mbs3.franklinwh.widget.data.GatewayRefresher
 import org.mbs3.franklinwh.widget.data.ReadingParseException
 import org.mbs3.franklinwh.widget.protocol.GatewayClient
+import org.mbs3.franklinwh.widget.work.RefreshScheduler
 import java.io.IOException
 
 /** Sets the gateway host and port. Used as the widget's configure activity and from the launcher. */
@@ -96,13 +95,13 @@ class WidgetConfigActivity : Activity() {
     private fun save() {
         val config = currentConfig() ?: return
         config.save(this)
-        val appContext = applicationContext
-        // Outlives this activity; the refresh takes about a second on the LAN.
-        CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
-            RefreshAction.requestRefresh(appContext)
+        findViewById<Button>(R.id.save).isEnabled = false
+        scope.launch {
+            RefreshScheduler.ensurePeriodic(applicationContext)
+            RefreshAction.requestRefresh(applicationContext)
+            setResult(RESULT_OK, resultIntent())
+            finish()
         }
-        setResult(RESULT_OK, resultIntent())
-        finish()
     }
 
     private fun resultIntent() = Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)

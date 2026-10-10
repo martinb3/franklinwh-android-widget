@@ -5,10 +5,10 @@ import androidx.glance.GlanceId
 import androidx.glance.action.ActionParameters
 import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.updateAll
-import org.mbs3.franklinwh.widget.data.GatewayRefresher
 import org.mbs3.franklinwh.widget.data.ReadingStore
+import org.mbs3.franklinwh.widget.work.RefreshScheduler
 
-/** Widget tap: show the refreshing indicator, then fetch a new reading. */
+/** Widget tap: show the refreshing indicator and hand the fetch to WorkManager. */
 class RefreshAction : ActionCallback {
     override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
         requestRefresh(context)
@@ -18,8 +18,7 @@ class RefreshAction : ActionCallback {
         suspend fun requestRefresh(context: Context) {
             ReadingStore(context).setRefreshing(System.currentTimeMillis())
             FwhWidget().updateAll(context)
-            GatewayRefresher.refreshOnce(context)
-            FwhWidget().updateAll(context)
+            RefreshScheduler.refreshNow(context)
         }
     }
 }
