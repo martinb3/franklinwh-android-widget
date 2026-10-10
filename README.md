@@ -48,8 +48,9 @@ The widget has two views and picks one by the age of its data:
   average power over that window, derived from the gateway's own energy
   counters.
 
-Every view carries the data's age ("just now", "7m ago", "as of 14:05") so a
-stale number is never mistaken for a current one.
+Every view carries the data's age ("just now" for the first two minutes, then
+"as of 14:05", "as of Mon 14:05" or "as of 3 Oct 14:05") so a stale number is
+never mistaken for a current one.
 
 At the default 2×2 size only battery, solar and load fit. Resize the widget to
 4×2 to see grid and battery as well.

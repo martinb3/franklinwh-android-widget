@@ -3,6 +3,7 @@ package org.mbs3.franklinwh.widget.data
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.floor
@@ -42,8 +43,13 @@ object DisplayFormat {
     }
 
     /**
-     * How old a reading is: "just now" under a minute, "Nm ago" under an hour, otherwise
-     * "as of HH:MM" in [zone] using the 24 h or 12 h clock.
+     * How old a reading is. Relative wording is used only inside the live window
+     * ([WidgetStateFactory.LIVE_MAX_AGE_MS]), where a redraw is guaranteed when it ends; after
+     * that the widget may not redraw for a long time, so the text names a fixed time instead:
+     * - younger than the live window: "just now"
+     * - same calendar day in [zone]: "as of 14:05" (or "as of 2:05 PM" when not [is24Hour])
+     * - 1 to 6 calendar days earlier: "as of Mon 14:05"
+     * - older: "as of 3 Oct 14:05"
      */
     fun ageText(
         nowMs: Long,
@@ -52,16 +58,16 @@ object DisplayFormat {
         zone: ZoneId = ZoneId.systemDefault(),
         locale: Locale = Locale.getDefault(),
     ): String {
-        val ageMs = (nowMs - thenMs).coerceAtLeast(0)
-        return when {
-            ageMs < 60_000 -> "just now"
-            ageMs < 3_600_000 -> "${ageMs / 60_000}m ago"
-            else -> {
-                val pattern = if (is24Hour) "HH:mm" else "h:mm a"
-                "as of " + DateTimeFormatter.ofPattern(pattern, locale)
-                    .format(Instant.ofEpochMilli(thenMs).atZone(zone))
-            }
+        if (nowMs - thenMs < WidgetStateFactory.LIVE_MAX_AGE_MS) return "just now"
+        val then = Instant.ofEpochMilli(thenMs).atZone(zone)
+        val days = ChronoUnit.DAYS.between(then.toLocalDate(), Instant.ofEpochMilli(nowMs).atZone(zone).toLocalDate())
+        val time = if (is24Hour) "HH:mm" else "h:mm a"
+        val pattern = when {
+            days <= 0 -> time
+            days <= 6 -> "EEE $time"
+            else -> "d MMM $time"
         }
+        return "as of " + DateTimeFormatter.ofPattern(pattern, locale).format(then)
     }
 
     private fun deadband(watts: Double): Double = if (abs(watts) < DEADBAND_W) 0.0 else watts
