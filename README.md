@@ -43,10 +43,11 @@ The widget has two views and picks one by the age of its data:
 
 - **Live view**, when the reading is under two minutes old: battery
   percentage and instantaneous power for solar, load, grid and battery.
-- **Daily view**, otherwise: battery percentage and today's energy totals.
-  Once the widget has readings at least 15 minutes apart it also shows the
-  average power over that window, derived from the gateway's own energy
-  counters.
+- **Daily view**, otherwise: battery percentage and today's energy totals:
+  solar and load (each with "avg 1.8 kW" once the widget has readings at
+  least 15 minutes apart, derived from the gateway's energy counters), grid
+  imported with exported below it ("0.2 kWh out"), and battery charged with
+  discharged below it.
 
 Every view carries the data's age ("just now" for the first two minutes, then
 "as of 14:05", "as of Mon 14:05" or "as of 3 Oct 14:05") so a stale number is

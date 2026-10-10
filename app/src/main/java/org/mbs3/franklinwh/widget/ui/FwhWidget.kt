@@ -126,7 +126,14 @@ private fun Message(title: String, detail: String?) {
     }
 }
 
-private class Tile(val icon: Int, val tint: ColorProvider, val value: String, val label: String)
+/** A tile shows a value and two label lines: a title, then an optional detail phrase. */
+private class Tile(
+    val icon: Int,
+    val tint: ColorProvider,
+    val value: String,
+    val title: String,
+    val detail: String? = null,
+)
 
 @Composable
 private fun Ready(context: Context, state: WidgetState.Ready, nowMs: Long, compact: Boolean) {
@@ -175,7 +182,10 @@ private fun Ready(context: Context, state: WidgetState.Ready, nowMs: Long, compa
                     style = TextStyle(color = WidgetPalette.textPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium),
                     maxLines = 1,
                 )
-                Text(tile.label, style = TextStyle(color = WidgetPalette.textSecondary, fontSize = 10.sp), maxLines = 1)
+                val labelStyle = TextStyle(color = WidgetPalette.textSecondary, fontSize = 10.sp)
+                Text(tile.title, style = labelStyle, maxLines = 1)
+                // A blank line when there is no detail keeps tiles the same height in both views.
+                Text(tile.detail ?: " ", style = labelStyle, maxLines = 1)
             }
         }
     }
@@ -188,29 +198,29 @@ private fun liveTiles(r: GatewayReading): List<Tile> = listOf(
     batteryTile(r, DisplayFormat.powerSigned(r.batteryW), "Battery"),
 )
 
-/** Labels stay short (about 14 characters) so they fit a quarter of a 4-cell widget. */
+/**
+ * Detail lines must fit a quarter of a 4-cell widget at 10sp (about 14 characters), so grid
+ * export and battery discharge read "0.2 kWh out" rather than "exported"/"discharged".
+ */
 private fun dailyTiles(r: GatewayReading, avg: PowerAverages?): List<Tile> = listOf(
     Tile(
-        R.drawable.ic_sun, WidgetPalette.solar, DisplayFormat.energy(r.kwhSolar),
-        avg?.let { "avg ${DisplayFormat.powerUnsigned(it.solarW)}" } ?: "Solar",
+        R.drawable.ic_sun, WidgetPalette.solar, DisplayFormat.energy(r.kwhSolar), "Solar",
+        avg?.let { "avg ${DisplayFormat.powerUnsigned(it.solarW)}" },
     ),
     Tile(
-        R.drawable.ic_house, WidgetPalette.load, DisplayFormat.energy(r.kwhLoad),
-        avg?.let { "avg ${DisplayFormat.powerUnsigned(it.loadW)}" } ?: "Load",
+        R.drawable.ic_house, WidgetPalette.load, DisplayFormat.energy(r.kwhLoad), "Load",
+        avg?.let { "avg ${DisplayFormat.powerUnsigned(it.loadW)}" },
     ),
     Tile(
-        R.drawable.ic_pylon, WidgetPalette.grid, DisplayFormat.energy(r.kwhGridIn),
-        "In \u00b7 ${DisplayFormat.kwhNumber(r.kwhGridOut)} out",
+        R.drawable.ic_pylon, WidgetPalette.grid, DisplayFormat.energy(r.kwhGridIn), "Imported",
+        "${DisplayFormat.energy(r.kwhGridOut)} out",
     ),
-    batteryTile(
-        r, DisplayFormat.energy(r.kwhBatteryCharge),
-        "Chg \u00b7 ${DisplayFormat.kwhNumber(r.kwhBatteryDischarge)} used",
-    ),
+    batteryTile(r, DisplayFormat.energy(r.kwhBatteryCharge), "Charged", "${DisplayFormat.energy(r.kwhBatteryDischarge)} out"),
 )
 
-private fun batteryTile(r: GatewayReading, value: String, label: String): Tile {
+private fun batteryTile(r: GatewayReading, value: String, title: String, detail: String? = null): Tile {
     val (glyph, tint) = WidgetPalette.tileBatteryGlyph(r.batteryW)
-    return Tile(glyph, tint, value, label)
+    return Tile(glyph, tint, value, title, detail)
 }
 
 @Composable
