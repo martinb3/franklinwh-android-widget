@@ -8,6 +8,16 @@ credentials: the only configuration is the gateway's host and port.
 This is an unofficial project. It is not affiliated with, endorsed by, or
 supported by FranklinWH.
 
+## Screenshots
+
+The three widgets (dashboard, summary and strip, top to bottom) showing the
+daily view, in dark and light mode:
+
+<p>
+  <img src="docs/screenshots/widgets-dark.png" alt="Dashboard, summary and strip widgets in dark mode" width="320">
+  <img src="docs/screenshots/widgets-light.png" alt="Dashboard, summary and strip widgets in light mode" width="320">
+</p>
+
 ## Status
 
 Alpha. Builds, passes its tests, and has been exercised on an Android 16
@@ -27,8 +37,11 @@ Requires JDK 17 or newer and the Android SDK (`ANDROID_HOME` set, or a
 
 ## Setup
 
-1. Add the "FranklinWH Widget" widget to a home screen. The configuration
-   screen opens.
+1. Add one of the widgets (Battery strip, Energy summary or Energy
+   dashboard) to a home screen, then open the configuration screen. On
+   Android 12 and later the widget is placed straight away and shows "Tap to
+   set up"; tap it. On older versions the screen opens on its own. It is also
+   reachable from the "FranklinWH Widget" app icon.
 2. Enter the gateway's IP address or hostname on your LAN and its TCP port
    (default 9000), then press **Test connection**. On success it shows the
    battery level and solar power it read.
