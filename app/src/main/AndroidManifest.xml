@@ -24,15 +24,42 @@
             </intent-filter>
         </activity>
 
+        <!-- Three widgets share data, refresh and rendering. FwhWidgetReceiver / fwh_widget_info
+             keep their original names so already-placed "Energy summary" widgets survive updates. -->
+        <receiver
+            android:name=".ui.StripWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_strip_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/fwh_strip_info" />
+        </receiver>
+
         <receiver
             android:name=".ui.FwhWidgetReceiver"
-            android:exported="true">
+            android:exported="true"
+            android:label="@string/widget_summary_label">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/fwh_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".ui.DashboardWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_dashboard_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/fwh_dashboard_info" />
         </receiver>
     </application>
 

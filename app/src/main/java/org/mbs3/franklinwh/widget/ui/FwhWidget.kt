@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.text.format.DateFormat
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.datastore.preferences.core.longPreferencesKey
@@ -55,7 +54,11 @@ import org.mbs3.franklinwh.widget.data.ReadingStore
 import org.mbs3.franklinwh.widget.data.WidgetState
 import org.mbs3.franklinwh.widget.data.WidgetStateFactory
 
-class FwhWidget : GlanceAppWidget() {
+/**
+ * Shared base for the three widgets. They differ only in [family], which picks the layouts
+ * Metrics prefers; data, refresh and rendering are shared.
+ */
+abstract class FwhBaseWidget(private val family: WidgetFamily) : GlanceAppWidget() {
 
     // Exact, not Responsive: with Responsive, LocalSize is the matched bucket's size, so the
     // width-based sizing in Metrics would only ever see the bucket widths.
@@ -73,28 +76,41 @@ class FwhWidget : GlanceAppWidget() {
             val now = System.currentTimeMillis()
             val config = GatewayConfig.load(appContext)
             val state = WidgetStateFactory.build(store, config, now)
-            Body(appContext, state, config, now)
+            Body(appContext, state, config, family, now)
         }
     }
 
     companion object {
-
         /** See provideGlance: changing this forces running sessions to recompose. */
         private val GENERATION_KEY = longPreferencesKey("generation")
 
-        /** Redraws every placed widget from the current ReadingStore contents. Use instead of updateAll(). */
+        private val ALL: List<() -> FwhBaseWidget> = listOf(::StripWidget, ::FwhWidget, ::DashboardWidget)
+
+        /** Redraws every placed widget of all three kinds. Use instead of updateAll(). */
         suspend fun redrawAll(context: Context) {
-            val widget = FwhWidget()
-            GlanceAppWidgetManager(context).getGlanceIds(FwhWidget::class.java).forEach { id ->
-                updateAppWidgetState(context, id) { it[GENERATION_KEY] = (it[GENERATION_KEY] ?: 0L) + 1 }
-                widget.update(context, id)
+            val manager = GlanceAppWidgetManager(context)
+            ALL.forEach { make ->
+                val widget = make()
+                manager.getGlanceIds(widget.javaClass).forEach { id ->
+                    updateAppWidgetState(context, id) { it[GENERATION_KEY] = (it[GENERATION_KEY] ?: 0L) + 1 }
+                    widget.update(context, id)
+                }
             }
         }
     }
 }
 
+/** "Battery strip": one row tall. */
+class StripWidget : FwhBaseWidget(WidgetFamily.STRIP)
+
+/** "Energy summary": two rows tall. Keeps the original class name so placed widgets survive updates. */
+class FwhWidget : FwhBaseWidget(WidgetFamily.SUMMARY)
+
+/** "Energy dashboard": three rows and up. */
+class DashboardWidget : FwhBaseWidget(WidgetFamily.DASHBOARD)
+
 @Composable
-private fun Body(context: Context, state: WidgetState, config: GatewayConfig, nowMs: Long) {
+private fun Body(context: Context, state: WidgetState, config: GatewayConfig, family: WidgetFamily, nowMs: Long) {
     val tap: Action = when (state) {
         WidgetState.Unconfigured -> actionStartActivity(
             Intent(context, WidgetConfigActivity::class.java)
@@ -102,7 +118,7 @@ private fun Body(context: Context, state: WidgetState, config: GatewayConfig, no
         )
         else -> actionRunCallback<RefreshAction>()
     }
-    val metrics = Metrics.forSize(LocalSize.current)
+    val metrics = Metrics.forSize(family, LocalSize.current)
     val card = GlanceModifier.fillMaxSize()
         .appWidgetBackground()
         .background(WidgetPalette.card)
@@ -172,81 +188,6 @@ private class Tile(
     /** Capacity bar fill (0..1), or null for no bar. */
     val bar: Float? = null,
 )
-
-/** How the battery charge bar is placed in the header. */
-private enum class Bar { NONE, INLINE, OWN_ROW }
-
-/** How the tiles are arranged. */
-private enum class Tiles { TWO, ROW_OF_FOUR, GRID }
-
-/** Strip (one-row) choices: how many readings to show and whether the age fits. */
-private data class StripMetrics(val readings: Int, val showAge: Boolean)
-
-/** Per-size type and layout choices. This is the only place widget sizes are decided. */
-private data class Metrics(
-    val percentSp: Int,
-    val headerIconDp: Int,
-    val valueSp: Int,
-    val labelSp: Int,
-    val iconDp: Int,
-    val bar: Bar,
-    val tiles: Tiles,
-    /** Spread the header and tiles over the height with weighted spacers. */
-    val spread: Boolean,
-    /** Show solar and grid capacity bars in the live view (when capacities are set). */
-    val capacityBars: Boolean,
-    /** Non-null for one-row heights, which use the single-row strip layout instead of tiles. */
-    val strip: StripMetrics? = null,
-) {
-    companion object {
-        /** Card padding, also applied in Body. */
-        val CARD_PADDING = 14.dp
-
-        /** Below this height the widget is a one-row strip. */
-        private val STRIP_MAX_HEIGHT = 110.dp
-        /** At or above this height the widget uses the tall layouts. */
-        private val TALL_MIN_HEIGHT = 220.dp
-        /** At or above this width the widget uses the wide layouts. */
-        private val WIDE_MIN_WIDTH = 250.dp
-
-        fun forSize(size: DpSize): Metrics {
-            if (size.height < STRIP_MAX_HEIGHT) {
-                val narrow = size.width < WIDE_MIN_WIDTH
-                return Metrics(
-                    percentSp = 20, headerIconDp = 18, valueSp = 13, labelSp = 10, iconDp = 16,
-                    bar = Bar.NONE, tiles = Tiles.TWO, spread = false, capacityBars = false,
-                    strip = StripMetrics(
-                        readings = if (narrow) 2 else 4,
-                        showAge = !narrow || size.width >= 180.dp,
-                    ),
-                )
-            }
-            val wide = size.width >= WIDE_MIN_WIDTH
-            val tall = size.height >= TALL_MIN_HEIGHT
-            val tiles = when {
-                tall -> Tiles.GRID
-                wide -> Tiles.ROW_OF_FOUR
-                else -> Tiles.TWO
-            }
-            val columns = if (tiles == Tiles.ROW_OF_FOUR) 4 else 2
-            // Value, label and icon sizes follow the width each tile gets, so values never ellipsize.
-            val tileWidth = (size.width - CARD_PADDING * 2) / columns
-            val (valueSp, labelSp, iconDp) = when {
-                tileWidth >= 120.dp -> Triple(20, 12, 28)
-                tileWidth >= 80.dp -> Triple(16, 11, 24)
-                tileWidth >= 60.dp -> Triple(14, 10, 20)
-                else -> Triple(12, 10, 20)
-            }
-            val (percentSp, headerIconDp, bar) = when {
-                tall && wide -> Triple(36, 28, Bar.INLINE)
-                tall -> Triple(32, 24, Bar.OWN_ROW)
-                wide -> Triple(28, 22, Bar.INLINE)
-                else -> Triple(22, 18, Bar.NONE)
-            }
-            return Metrics(percentSp, headerIconDp, valueSp, labelSp, iconDp, bar, tiles, spread = tall, capacityBars = tall)
-        }
-    }
-}
 
 @Composable
 private fun ColumnScope.Ready(state: WidgetState.Ready, config: GatewayConfig, m: Metrics) {

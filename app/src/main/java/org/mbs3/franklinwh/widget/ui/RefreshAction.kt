@@ -16,7 +16,7 @@ class RefreshAction : ActionCallback {
     companion object {
         suspend fun requestRefresh(context: Context) {
             ReadingStore(context).setRefreshing(System.currentTimeMillis())
-            FwhWidget.redrawAll(context)
+            FwhBaseWidget.redrawAll(context)
             RefreshScheduler.refreshNow(context)
         }
     }

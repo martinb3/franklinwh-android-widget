@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sizes follow the Android widget sizing table (developer.android.com/develop/ui/views/appwidgets/layouts):
+     n cells are 73n-16 dp wide in portrait and n rows are 66n-15 dp tall in landscape. Minimums sit
+     1 dp below that so n cells fit; maximums equal it. targetCell* is used on Android 12+, min* before. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:configure="org.mbs3.franklinwh.widget.ui.WidgetConfigActivity"
+    android:description="@string/widget_dashboard_description"
+    android:initialLayout="@layout/glance_default_loading_layout"
+    android:minWidth="202dp"
+    android:minHeight="182dp"
+    android:minResizeWidth="129dp"
+    android:minResizeHeight="182dp"
+    android:maxResizeWidth="349dp"
+    android:previewImage="@drawable/preview_dashboard"
+    android:resizeMode="horizontal|vertical"
+    android:targetCellWidth="3"
+    android:targetCellHeight="3"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen"
+    android:widgetFeatures="reconfigurable|configuration_optional" />

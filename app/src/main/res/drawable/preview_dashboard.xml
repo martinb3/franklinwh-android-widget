@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget picker preview: dashboard with charge bar and a 2x2 grid of tiles. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="170dp"
+    android:height="180dp"
+    android:viewportWidth="170"
+    android:viewportHeight="180">
+    <path
+        android:fillColor="#B3000000"
+        android:pathData="M12,0H158A12,12 0,0 1,170,12V168A12,12 0,0 1,158,180H12A12,12 0,0 1,0,168V12A12,12 0,0 1,12,0Z" />
+    <path
+        android:fillColor="#B3FFFFFF"
+        android:pathData="M16,16H26A2,2 0,0 1,28,18V38A2,2 0,0 1,26,40H16A2,2 0,0 1,14,38V18A2,2 0,0 1,16,16Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M35,16H79A3,3 0,0 1,82,19V37A3,3 0,0 1,79,40H35A3,3 0,0 1,32,37V19A3,3 0,0 1,35,16Z" />
+    <path
+        android:fillColor="#FF66BB6A"
+        android:pathData="M17,50H153A3,3 0,0 1,156,53V53A3,3 0,0 1,153,56H17A3,3 0,0 1,14,53V53A3,3 0,0 1,17,50Z" />
+    <path
+        android:fillColor="#FFFFB300"
+        android:pathData="M22,72H22A8,8 0,0 1,30,80V80A8,8 0,0 1,22,88H22A8,8 0,0 1,14,80V80A8,8 0,0 1,22,72Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M16,92H56A2,2 0,0 1,58,94V100A2,2 0,0 1,56,102H16A2,2 0,0 1,14,100V94A2,2 0,0 1,16,92Z" />
+    <path
+        android:fillColor="#B3FFFFFF"
+        android:pathData="M16,106H44A2,2 0,0 1,46,108V110A2,2 0,0 1,44,112H16A2,2 0,0 1,14,110V108A2,2 0,0 1,16,106Z" />
+    <path
+        android:fillColor="#FF4FC3F7"
+        android:pathData="M96,72H96A8,8 0,0 1,104,80V80A8,8 0,0 1,96,88H96A8,8 0,0 1,88,80V80A8,8 0,0 1,96,72Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M90,92H130A2,2 0,0 1,132,94V100A2,2 0,0 1,130,102H90A2,2 0,0 1,88,100V94A2,2 0,0 1,90,92Z" />
+    <path
+        android:fillColor="#B3FFFFFF"
+        android:pathData="M90,106H118A2,2 0,0 1,120,108V110A2,2 0,0 1,118,112H90A2,2 0,0 1,88,110V108A2,2 0,0 1,90,106Z" />
+    <path
+        android:fillColor="#FFB39DDB"
+        android:pathData="M22,120H22A8,8 0,0 1,30,128V128A8,8 0,0 1,22,136H22A8,8 0,0 1,14,128V128A8,8 0,0 1,22,120Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M16,140H56A2,2 0,0 1,58,142V148A2,2 0,0 1,56,150H16A2,2 0,0 1,14,148V142A2,2 0,0 1,16,140Z" />
+    <path
+        android:fillColor="#B3FFFFFF"
+        android:pathData="M16,154H44A2,2 0,0 1,46,156V158A2,2 0,0 1,44,160H16A2,2 0,0 1,14,158V156A2,2 0,0 1,16,154Z" />
+    <path
+        android:fillColor="#FF66BB6A"
+        android:pathData="M96,120H96A8,8 0,0 1,104,128V128A8,8 0,0 1,96,136H96A8,8 0,0 1,88,128V128A8,8 0,0 1,96,120Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M90,140H130A2,2 0,0 1,132,142V148A2,2 0,0 1,130,150H90A2,2 0,0 1,88,148V142A2,2 0,0 1,90,140Z" />
+    <path
+        android:fillColor="#B3FFFFFF"
+        android:pathData="M90,154H118A2,2 0,0 1,120,156V158A2,2 0,0 1,118,160H90A2,2 0,0 1,88,158V156A2,2 0,0 1,90,154Z" />
+</vector>

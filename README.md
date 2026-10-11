@@ -58,8 +58,17 @@ Every view carries the data's age ("just now" for the first two minutes, then
 "as of 14:05", "as of Mon 14:05" or "as of 3 Oct 14:05") so a stale number is
 never mistaken for a current one.
 
-At the default 2×2 size only battery, solar and load fit. Resize the widget to
-4×2 to see grid and battery as well.
+There are three widgets in the picker, sharing one setup and one set of data:
+
+- **Battery strip**: 1 row tall, 2 to 5 cells wide (default 4×1). Battery
+  percentage and readings in a single line; at 2 cells only solar and load.
+- **Energy summary**: 2 rows tall, 2 to 5 cells wide (default 4×2). Battery
+  percentage and charge bar over tiles; at 2 cells only solar and load.
+- **Energy dashboard**: 3 rows and up, 2 to 5 cells wide (default 3×3).
+  Larger type, tiles in a 2×2 grid, and the optional capacity bars.
+
+After the first setup, more widgets are added without the setup screen on
+Android 12 and later.
 
 Display rules follow the same conventions as the pixel-clock bridge this was
 modelled on: power is always kW with one decimal; anything under 100 W reads

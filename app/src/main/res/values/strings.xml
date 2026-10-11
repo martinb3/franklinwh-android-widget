@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">FranklinWH Widget</string>
-    <string name="widget_description">Battery, solar, load and grid from your FranklinWH gateway</string>
+    <string name="widget_strip_label">Battery strip</string>
+    <string name="widget_strip_description">One row: battery percentage with solar, load, grid and battery at a glance</string>
+    <string name="widget_summary_label">Energy summary</string>
+    <string name="widget_summary_description">Two rows: battery percentage and charge bar with solar, load, grid and battery tiles</string>
+    <string name="widget_dashboard_label">Energy dashboard</string>
+    <string name="widget_dashboard_description">Three rows and up: larger tiles, and optional solar and grid capacity bars</string>
     <string name="config_title">Gateway</string>
     <string name="config_host">Host or IP address</string>
     <string name="config_host_hint">192.0.2.10</string>

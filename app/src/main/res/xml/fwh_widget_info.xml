@@ -1,14 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Sizes follow the Android widget sizing table (developer.android.com/develop/ui/views/appwidgets/layouts):
+     n cells are 73n-16 dp wide in portrait and n rows are 66n-15 dp tall in landscape. Minimums sit
+     1 dp below that so n cells fit; maximums equal it. targetCell* is used on Android 12+, min* before. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:configure="org.mbs3.franklinwh.widget.ui.WidgetConfigActivity"
-    android:description="@string/widget_description"
+    android:description="@string/widget_summary_description"
     android:initialLayout="@layout/glance_default_loading_layout"
-    android:minWidth="110dp"
-    android:minHeight="110dp"
-    android:minResizeWidth="110dp"
-    android:minResizeHeight="40dp"
-    android:previewImage="@drawable/ic_launcher_battery"
+    android:minWidth="275dp"
+    android:minHeight="116dp"
+    android:minResizeWidth="129dp"
+    android:minResizeHeight="116dp"
+    android:maxResizeWidth="349dp"
+    android:maxResizeHeight="117dp"
+    android:previewImage="@drawable/preview_summary"
     android:resizeMode="horizontal|vertical"
+    android:targetCellWidth="4"
+    android:targetCellHeight="2"
     android:updatePeriodMillis="0"
     android:widgetCategory="home_screen"
-    android:widgetFeatures="reconfigurable" />
+    android:widgetFeatures="reconfigurable|configuration_optional" />

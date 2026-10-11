@@ -9,14 +9,14 @@ import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import org.mbs3.franklinwh.widget.R
 import org.mbs3.franklinwh.widget.data.GatewayRefresher
-import org.mbs3.franklinwh.widget.ui.FwhWidget
+import org.mbs3.franklinwh.widget.ui.FwhBaseWidget
 
 /** Fetches a reading, redraws the widgets, and schedules the redraw that ends the live view. */
 class RefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
         val result = GatewayRefresher.refreshOnce(applicationContext)
-        FwhWidget.redrawAll(applicationContext)
+        FwhBaseWidget.redrawAll(applicationContext)
         return when (result) {
             is GatewayRefresher.Result.Success -> {
                 RefreshScheduler.redrawWhenLiveExpires(applicationContext)
