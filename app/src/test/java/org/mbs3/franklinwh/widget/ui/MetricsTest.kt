@@ -91,11 +91,13 @@ class MetricsTest {
 
     @Test
     fun dashboardFallsBackWhenGridDoesNotFit() {
-        // Pixel 9 Pro XL 3x2 portrait: the grid needs about 293 dp, so use the summary row of four.
+        // Pixel 9 Pro XL 3x2 portrait: even with label-free tiles the grid needs about 238 dp.
         val m = Metrics.forSize(WidgetFamily.DASHBOARD, size(300, 226))
         assertTrue(m.isSummary())
         assertEquals(Tiles.ROW_OF_FOUR, m.tiles)
-        assertEquals(Tiles.TWO, Metrics.forSize(WidgetFamily.DASHBOARD, size(203, 226)).tiles)
+        // Narrow 3x2: smaller type (16sp values, 32sp percentage) makes the grid fit in about 224 dp.
+        assertEquals(Tiles.GRID, Metrics.forSize(WidgetFamily.DASHBOARD, size(203, 226)).tiles)
+        assertEquals(Tiles.TWO, Metrics.forSize(WidgetFamily.DASHBOARD, size(203, 200)).tiles)
         assertTrue(Metrics.forSize(WidgetFamily.DASHBOARD, size(412, 184)).isSummary()) // 3x3 landscape
     }
 
@@ -113,5 +115,13 @@ class MetricsTest {
         assertEquals(16, Metrics.forSize(WidgetFamily.DASHBOARD, size(203, 337)).valueSp) // 87.5 dp tiles
         assertNull(Metrics.forSize(WidgetFamily.SUMMARY, size(276, 220)).strip)
         assertNotNull(Metrics.forSize(WidgetFamily.STRIP, size(349, 102)).strip)
+    }
+
+    @Test
+    fun gridHeightEstimateAt300x226() {
+        // padding 28 + header 36sp*1.3 + gap 8 + 2 tiles (28 icon + 2 + 20sp*1.3 + 12sp*1.3) + 12
+        assertEquals(238.0f, Metrics.gridHeightFor(size(300, 226)), 0.5f)
+        assertFalse(Metrics.forSize(WidgetFamily.DASHBOARD, size(300, 226)).isDashboard())
+        assertTrue(Metrics.forSize(WidgetFamily.DASHBOARD, size(300, 240)).isDashboard())
     }
 }

@@ -48,11 +48,13 @@ The widget has two views and picks one by the age of its data:
 
 - **Live view**, when the reading is under two minutes old: battery
   percentage and instantaneous power for solar, load, grid and battery.
-- **Daily view**, otherwise: battery percentage and today's energy totals:
-  solar and load (each with "Avg 1.8 kW" once the widget has readings at
-  least 15 minutes apart, derived from the gateway's energy counters), grid
-  imported with "Out 0.2 kWh" below it, and battery charged with
-  "Used 1.2 kWh" below it.
+  A "+" on grid or battery means that source is supplying the house.
+- **Daily view**, otherwise: battery percentage and today's energy totals.
+  Solar and load show kWh, with "Avg 1.8 kW" below once the widget has
+  readings at least 15 minutes apart (derived from the gateway's energy
+  counters). Grid and battery show "in / out" pairs such as "24.6 / 0.2"
+  (kWh imported / exported, charged / discharged). Each tile's icon names
+  the reading.
 
 Every view carries the data's age ("just now" for the first two minutes, then
 "as of 14:05", "as of Mon 14:05" or "as of 3 Oct 14:05") so a stale number is

@@ -191,7 +191,10 @@ private fun Message(title: String, detail: String?) {
     }
 }
 
-/** A tile shows a value and two label lines: a title, then an optional detail phrase. */
+/**
+ * A tile shows its icon, a value and an optional detail line. The icon identifies the reading, so
+ * there is no visible title; [title] is the icon's content description for screen readers.
+ */
 private class Tile(
     val icon: Int,
     val tint: ColorProvider,
@@ -200,6 +203,8 @@ private class Tile(
     val detail: String? = null,
     /** Capacity bar fill (0..1), or null for no bar. */
     val bar: Float? = null,
+    /** The value shown in the strip, which has no detail line to explain a compound value. */
+    val stripValue: String = value,
 )
 
 @Composable
@@ -262,10 +267,12 @@ private fun ColumnScope.Ready(state: WidgetState.Ready, config: GatewayConfig, m
 @Composable
 private fun TileRow(tiles: List<Tile>, m: Metrics, barSlot: Boolean) {
     val labelStyle = TextStyle(color = WidgetPalette.textSecondary, fontSize = m.labelSp.sp)
+    // Reserve a detail line in every tile of this row only if some tile in it has one.
+    val detailSlot = tiles.any { it.detail != null }
     Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
         tiles.forEach { tile ->
             Column(GlanceModifier.defaultWeight()) {
-                Icon(tile.icon, tile.tint, m.iconDp)
+                Icon(tile.icon, tile.tint, m.iconDp, tile.title)
                 Spacer(GlanceModifier.height(2.dp))
                 Text(
                     tile.value,
@@ -288,9 +295,7 @@ private fun TileRow(tiles: List<Tile>, m: Metrics, barSlot: Boolean) {
                     }
                     Spacer(GlanceModifier.height(4.dp))
                 }
-                Text(tile.title, style = labelStyle, maxLines = 1)
-                // A blank line when there is no detail keeps tiles the same height in both views.
-                Text(tile.detail ?: " ", style = labelStyle, maxLines = 1)
+                if (detailSlot) Text(tile.detail ?: " ", style = labelStyle, maxLines = 1)
             }
         }
     }
@@ -332,9 +337,9 @@ private fun RowScope.Strip(
     // (which separate weighted spacers allowed).
     readings.forEach { tile ->
         Row(GlanceModifier.defaultWeight(), verticalAlignment = Alignment.CenterVertically) {
-            Icon(tile.icon, tile.tint, m.iconDp)
+            Icon(tile.icon, tile.tint, m.iconDp, tile.title)
             Spacer(GlanceModifier.width(4.dp))
-            Text(tile.value, style = TextStyle(color = WidgetPalette.textPrimary, fontSize = m.valueSp.sp), maxLines = 1)
+            Text(tile.stripValue, style = TextStyle(color = WidgetPalette.textPrimary, fontSize = m.valueSp.sp), maxLines = 1)
         }
     }
     if (strip.ageInRow && strip.showAge && ageText != null) {
@@ -355,7 +360,7 @@ private fun liveTiles(r: GatewayReading, config: GatewayConfig, bars: Boolean): 
     batteryTile(r, DisplayFormat.powerSigned(r.batteryW), "Battery"),
 )
 
-/** Label lines are capitalised; detail lines lead with the word, then the number ("Out 0.2 kWh"). */
+/** Detail lines are capitalised phrases. Grid and battery show "in / out" pairs. */
 private fun dailyTiles(r: GatewayReading, avg: PowerAverages?): List<Tile> = listOf(
     Tile(
         R.drawable.ic_sun, WidgetPalette.solar, DisplayFormat.energy(r.kwhSolar), "Solar",
@@ -366,22 +371,34 @@ private fun dailyTiles(r: GatewayReading, avg: PowerAverages?): List<Tile> = lis
         avg?.let { "Avg ${DisplayFormat.powerUnsigned(it.loadW)}" },
     ),
     Tile(
-        R.drawable.ic_pylon, WidgetPalette.grid, DisplayFormat.energy(r.kwhGridIn), "Grid in",
-        "Out ${DisplayFormat.energy(r.kwhGridOut)}",
+        R.drawable.ic_pylon, WidgetPalette.grid,
+        "${DisplayFormat.kwhNumber(r.kwhGridIn)} / ${DisplayFormat.kwhNumber(r.kwhGridOut)}", "Grid",
+        "kWh in / out",
+        stripValue = DisplayFormat.energy(r.kwhGridIn),
     ),
-    batteryTile(r, DisplayFormat.energy(r.kwhBatteryCharge), "Charged", "Used ${DisplayFormat.energy(r.kwhBatteryDischarge)}"),
+    batteryTile(
+        r, "${DisplayFormat.kwhNumber(r.kwhBatteryCharge)} / ${DisplayFormat.kwhNumber(r.kwhBatteryDischarge)}", "Battery",
+        "kWh in / out",
+        stripValue = DisplayFormat.energy(r.kwhBatteryCharge),
+    ),
 )
 
-private fun batteryTile(r: GatewayReading, value: String, title: String, detail: String? = null): Tile {
+private fun batteryTile(
+    r: GatewayReading,
+    value: String,
+    title: String,
+    detail: String? = null,
+    stripValue: String = value,
+): Tile {
     val (glyph, tint) = WidgetPalette.tileBatteryGlyph(r.batteryW)
-    return Tile(glyph, tint, value, title, detail)
+    return Tile(glyph, tint, value, title, detail, stripValue = stripValue)
 }
 
 @Composable
-private fun Icon(resId: Int, tint: ColorProvider, sizeDp: Int) {
+private fun Icon(resId: Int, tint: ColorProvider, sizeDp: Int, contentDescription: String? = null) {
     Image(
         provider = ImageProvider(resId),
-        contentDescription = null,
+        contentDescription = contentDescription,
         modifier = GlanceModifier.size(sizeDp.dp),
         colorFilter = ColorFilter.tint(tint),
     )

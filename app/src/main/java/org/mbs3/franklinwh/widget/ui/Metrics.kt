@@ -95,11 +95,14 @@ internal data class Metrics(
         }
 
         /** Height the tall grid layout needs: padding, header, bar row, gaps and two tile rows. */
+        internal fun gridHeightFor(size: DpSize): Float = tiles(size, tall = true).gridHeightDp()
+
         private fun Metrics.gridHeightDp(): Float {
             val header = maxOf(headerIconDp.toFloat(), percentSp * LINE)
             val barRow = if (bar == Bar.OWN_ROW) 6f + 6f else 0f
             val capacityBar = if (capacityBars) 12f else 0f
-            val tile = iconDp + 2f + valueSp * LINE + 2 * labelSp * LINE + capacityBar
+            // Tiles have at most one line under the value: a detail line (daily) or a bar (live).
+            val tile = iconDp + 2f + valueSp * LINE + maxOf(labelSp * LINE, capacityBar)
             val minGap = 8f
             return CARD_PADDING.value * 2 + header + barRow + minGap + 2 * tile + 12f
         }
