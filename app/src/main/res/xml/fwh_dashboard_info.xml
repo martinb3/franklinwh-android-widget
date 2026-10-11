@@ -2,14 +2,19 @@
 <!-- Sizes follow the Android widget sizing table (developer.android.com/develop/ui/views/appwidgets/layouts):
      n cells are 73n-16 dp wide in portrait and n rows are 66n-15 dp tall in landscape. Minimums sit
      1 dp below that so n cells fit; maximums equal it. targetCell* is used on Android 12+, min* before. -->
+<!-- Dashboard height: 240 dp is above two portrait rows (220 dp in the table, 226 dp measured on a
+     Pixel 9 Pro XL) and below three (about 337 dp), so the launcher gives it at least 3 rows in
+     portrait, where its 2x2 grid fits. Trade-off: in landscape, where rows are much shorter, it
+     needs 4 or more rows, and it can no longer be shrunk to 2 rows; Metrics still falls back to
+     the summary layout if the grid does not fit. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:configure="org.mbs3.franklinwh.widget.ui.WidgetConfigActivity"
     android:description="@string/widget_dashboard_description"
     android:initialLayout="@layout/glance_default_loading_layout"
     android:minWidth="202dp"
-    android:minHeight="182dp"
+    android:minHeight="240dp"
     android:minResizeWidth="129dp"
-    android:minResizeHeight="182dp"
+    android:minResizeHeight="240dp"
     android:maxResizeWidth="349dp"
     android:previewImage="@drawable/preview_dashboard"
     android:resizeMode="horizontal|vertical"

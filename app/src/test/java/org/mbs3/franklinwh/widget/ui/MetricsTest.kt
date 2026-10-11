@@ -22,12 +22,35 @@ class MetricsTest {
 
     @Test
     fun stripInRange() {
-        val wide = Metrics.forSize(WidgetFamily.STRIP, size(276, 102)) // 4x1 portrait
-        assertEquals(StripMetrics(readings = 4, showAge = true), wide.strip)
-        val landscape = Metrics.forSize(WidgetFamily.STRIP, size(554, 51)) // 4x1 landscape
-        assertEquals(4, landscape.strip!!.readings)
-        assertEquals(StripMetrics(2, showAge = true), Metrics.forSize(WidgetFamily.STRIP, size(203, 102)).strip)
-        assertEquals(StripMetrics(2, showAge = false), Metrics.forSize(WidgetFamily.STRIP, size(130, 102)).strip)
+        // Pixel 9 Pro XL 4x1 portrait: four readings, age in the corner above the row.
+        val wide = Metrics.forSize(WidgetFamily.STRIP, size(406, 107)).strip!!
+        assertEquals(4, wide.readings)
+        assertTrue(wide.showAge)
+        assertFalse(wide.ageInRow)
+        // Narrow strip: solar and load, age in the corner.
+        val narrow = Metrics.forSize(WidgetFamily.STRIP, size(200, 107)).strip!!
+        assertEquals(2, narrow.readings)
+        assertTrue(narrow.showAge)
+        // Landscape 4x1: short, so the age shares the row and must fit there.
+        val landscape = Metrics.forSize(WidgetFamily.STRIP, size(554, 51)).strip!!
+        assertEquals(4, landscape.readings)
+        assertTrue(landscape.ageInRow)
+        assertTrue(landscape.showAge)
+    }
+
+    @Test
+    fun stripShrinksValuesToFitFourReadings() {
+        // 13sp values would overflow 406 dp with four readings; the budget picks a smaller size.
+        assertEquals(12, Metrics.forSize(WidgetFamily.STRIP, size(406, 107)).valueSp)
+        assertEquals(13, Metrics.forSize(WidgetFamily.STRIP, size(554, 51)).valueSp)
+    }
+
+    @Test
+    fun shortNarrowStripDropsAgeWhenItCannotFit() {
+        val s = Metrics.forSize(WidgetFamily.STRIP, size(269, 51)).strip!! // 2x1 landscape
+        assertTrue(s.ageInRow)
+        assertEquals(4, s.readings)
+        assertFalse(s.showAge)
     }
 
     @Test
@@ -63,7 +86,17 @@ class MetricsTest {
         val large = Metrics.forSize(WidgetFamily.DASHBOARD, size(301, 464))
         assertEquals(Bar.INLINE, large.bar)
         assertEquals(20, large.valueSp) // (301 - 28) / 2 = 136 dp per tile
-        assertTrue(Metrics.forSize(WidgetFamily.DASHBOARD, size(412, 184)).isDashboard()) // 3x3 landscape
+        assertTrue(Metrics.forSize(WidgetFamily.DASHBOARD, size(300, 340)).isDashboard())
+    }
+
+    @Test
+    fun dashboardFallsBackWhenGridDoesNotFit() {
+        // Pixel 9 Pro XL 3x2 portrait: the grid needs about 293 dp, so use the summary row of four.
+        val m = Metrics.forSize(WidgetFamily.DASHBOARD, size(300, 226))
+        assertTrue(m.isSummary())
+        assertEquals(Tiles.ROW_OF_FOUR, m.tiles)
+        assertEquals(Tiles.TWO, Metrics.forSize(WidgetFamily.DASHBOARD, size(203, 226)).tiles)
+        assertTrue(Metrics.forSize(WidgetFamily.DASHBOARD, size(412, 184)).isSummary()) // 3x3 landscape
     }
 
     @Test

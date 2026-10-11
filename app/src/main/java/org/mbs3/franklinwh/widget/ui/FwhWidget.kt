@@ -128,17 +128,30 @@ private fun Body(context: Context, state: WidgetState, config: GatewayConfig, fa
         val age = DisplayFormat.ageText(nowMs, it.reading.timestampMs, DateFormat.is24HourFormat(context))
         if (it.refreshing) "$age \u00b7 refreshing\u2026" else age
     }
-    if (metrics.strip != null) {
-        // One-row heights: the Row is the card content directly, with the age as its last item
-        // rather than an overlay, which would sit on top of the readings.
-        Row(
-            modifier = card.padding(horizontal = Metrics.CARD_PADDING, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+    val strip = metrics.strip
+    if (strip != null) {
+        @Composable
+        fun StripRow(modifier: GlanceModifier) = Row(modifier, verticalAlignment = Alignment.CenterVertically) {
             when (state) {
                 WidgetState.Unconfigured -> StripMessage("Tap to set up", null)
                 is WidgetState.NoData -> StripMessage("No data yet", state.lastError)
-                is WidgetState.Ready -> Strip(state, config, metrics, metrics.strip, ageText)
+                is WidgetState.Ready -> Strip(state, config, metrics, strip, ageText)
+            }
+        }
+        val padded = card.padding(horizontal = Metrics.CARD_PADDING, vertical = 8.dp)
+        if (strip.ageInRow) {
+            // Short strips: the age is the Row's last item; an overlay would sit on the readings.
+            StripRow(padded)
+        } else {
+            // Strips with spare height (a portrait row): the age goes in the top-right corner,
+            // above the vertically centred readings, so the row keeps its width for them.
+            Box(padded, contentAlignment = Alignment.TopEnd) {
+                Box(GlanceModifier.fillMaxSize(), contentAlignment = Alignment.CenterStart) {
+                    StripRow(GlanceModifier.fillMaxWidth())
+                }
+                if (ageText != null && strip.showAge) {
+                    Text(ageText, style = TextStyle(color = WidgetPalette.textSecondary, fontSize = 10.sp), maxLines = 1)
+                }
             }
         }
         return
@@ -307,21 +320,24 @@ private fun RowScope.Strip(
         .take(strip.readings)
     val (glyph, glyphTint) = WidgetPalette.headerBatteryGlyph(r.batteryW)
     Icon(glyph, glyphTint, m.headerIconDp)
-    Spacer(GlanceModifier.width(4.dp))
+    Spacer(GlanceModifier.width(3.dp))
     Text(
         DisplayFormat.soc(r.soc),
         style = TextStyle(color = WidgetPalette.textPrimary, fontSize = m.percentSp.sp, fontWeight = FontWeight.Bold),
         maxLines = 1,
     )
-    Spacer(GlanceModifier.width(12.dp))
-    readings.forEachIndexed { i, tile ->
-        if (i > 0) Spacer(GlanceModifier.defaultWeight())
-        Icon(tile.icon, tile.tint, m.iconDp)
-        Spacer(GlanceModifier.width(4.dp))
-        Text(tile.value, style = TextStyle(color = WidgetPalette.textPrimary, fontSize = m.valueSp.sp), maxLines = 1)
+    Spacer(GlanceModifier.width(strip.gapDp.dp))
+    // Each reading is a weighted, start-aligned group. Weighted children share only the width left
+    // after the fixed items, so a long value cannot push later readings or the age to zero width
+    // (which separate weighted spacers allowed).
+    readings.forEach { tile ->
+        Row(GlanceModifier.defaultWeight(), verticalAlignment = Alignment.CenterVertically) {
+            Icon(tile.icon, tile.tint, m.iconDp)
+            Spacer(GlanceModifier.width(4.dp))
+            Text(tile.value, style = TextStyle(color = WidgetPalette.textPrimary, fontSize = m.valueSp.sp), maxLines = 1)
+        }
     }
-    if (strip.showAge && ageText != null) {
-        Spacer(GlanceModifier.defaultWeight())
+    if (strip.ageInRow && strip.showAge && ageText != null) {
         Text(ageText, style = TextStyle(color = WidgetPalette.textSecondary, fontSize = 10.sp), maxLines = 1)
     }
 }
