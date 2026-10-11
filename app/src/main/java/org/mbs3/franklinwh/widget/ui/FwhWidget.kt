@@ -33,6 +33,7 @@ import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.ColumnScope
 import androidx.glance.layout.Row
+import androidx.glance.layout.RowScope
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
@@ -56,7 +57,7 @@ import org.mbs3.franklinwh.widget.data.WidgetStateFactory
 
 class FwhWidget : GlanceAppWidget() {
 
-    override val sizeMode = SizeMode.Responsive(setOf(COMPACT, WIDE, TALL, LARGE))
+    override val sizeMode = SizeMode.Responsive(setOf(NARROW_STRIP, STRIP, COMPACT, WIDE, TALL, LARGE))
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val appContext = context.applicationContext
@@ -79,6 +80,8 @@ class FwhWidget : GlanceAppWidget() {
         val WIDE = DpSize(250.dp, 110.dp)
         val TALL = DpSize(110.dp, 220.dp)
         val LARGE = DpSize(250.dp, 220.dp)
+        val NARROW_STRIP = DpSize(110.dp, 40.dp)
+        val STRIP = DpSize(250.dp, 40.dp)
 
         /** See provideGlance: changing this forces running sessions to recompose. */
         private val GENERATION_KEY = longPreferencesKey("generation")
@@ -104,15 +107,34 @@ private fun Body(context: Context, state: WidgetState, config: GatewayConfig, no
         else -> actionRunCallback<RefreshAction>()
     }
     val metrics = Metrics.forSize(LocalSize.current)
+    val card = GlanceModifier.fillMaxSize()
+        .appWidgetBackground()
+        .background(WidgetPalette.card)
+        .cornerRadius(20.dp)
+        .clickable(tap)
+    val ageText = (state as? WidgetState.Ready)?.let {
+        val age = DisplayFormat.ageText(nowMs, it.reading.timestampMs, DateFormat.is24HourFormat(context))
+        if (it.refreshing) "$age \u00b7 refreshing\u2026" else age
+    }
+    if (metrics.strip != null) {
+        // One-row heights: the Row is the card content directly, with the age as its last item
+        // rather than an overlay, which would sit on top of the readings.
+        Row(
+            modifier = card.padding(horizontal = Metrics.CARD_PADDING, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            when (state) {
+                WidgetState.Unconfigured -> StripMessage("Tap to set up", null)
+                is WidgetState.NoData -> StripMessage("No data yet", state.lastError)
+                is WidgetState.Ready -> Strip(state, config, metrics, metrics.strip, ageText)
+            }
+        }
+        return
+    }
     // Glance has no per-child alignment in a Box, so the card is a TopEnd Box holding a centred
     // Box for the content and, as its second child, the age text in the top-right corner.
     Box(
-        modifier = GlanceModifier.fillMaxSize()
-            .appWidgetBackground()
-            .background(WidgetPalette.card)
-            .cornerRadius(20.dp)
-            .padding(Metrics.CARD_PADDING)
-            .clickable(tap),
+        modifier = card.padding(Metrics.CARD_PADDING),
         contentAlignment = Alignment.TopEnd,
     ) {
         Box(GlanceModifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -128,13 +150,8 @@ private fun Body(context: Context, state: WidgetState, config: GatewayConfig, no
                 }
             }
         }
-        if (state is WidgetState.Ready) {
-            val age = DisplayFormat.ageText(nowMs, state.reading.timestampMs, DateFormat.is24HourFormat(context))
-            Text(
-                if (state.refreshing) "$age \u00b7 refreshing\u2026" else age,
-                style = TextStyle(color = WidgetPalette.textSecondary, fontSize = 10.sp),
-                maxLines = 1,
-            )
+        if (ageText != null) {
+            Text(ageText, style = TextStyle(color = WidgetPalette.textSecondary, fontSize = 10.sp), maxLines = 1)
         }
     }
 }
@@ -166,6 +183,9 @@ private enum class Bar { NONE, INLINE, OWN_ROW }
 /** How the tiles are arranged. */
 private enum class Tiles { TWO, ROW_OF_FOUR, GRID }
 
+/** Strip (one-row) choices: how many readings to show and whether the age fits. */
+private data class StripMetrics(val readings: Int, val showAge: Boolean)
+
 /** Per-size type and layout choices. This is the only place widget sizes are decided. */
 private data class Metrics(
     val percentSp: Int,
@@ -179,12 +199,25 @@ private data class Metrics(
     val spread: Boolean,
     /** Show solar and grid capacity bars in the live view (when capacities are set). */
     val capacityBars: Boolean,
+    /** Non-null for one-row heights, which use the single-row strip layout instead of tiles. */
+    val strip: StripMetrics? = null,
 ) {
     companion object {
         /** Card padding, also applied in Body. */
         val CARD_PADDING = 14.dp
 
         fun forSize(size: DpSize): Metrics {
+            if (size.height < FwhWidget.COMPACT.height) {
+                val narrow = size.width < FwhWidget.STRIP.width
+                return Metrics(
+                    percentSp = 20, headerIconDp = 18, valueSp = 13, labelSp = 10, iconDp = 16,
+                    bar = Bar.NONE, tiles = Tiles.TWO, spread = false, capacityBars = false,
+                    strip = StripMetrics(
+                        readings = if (narrow) 2 else 4,
+                        showAge = !narrow || size.width >= 180.dp,
+                    ),
+                )
+            }
             val wide = size.width >= FwhWidget.WIDE.width
             val tall = size.height >= FwhWidget.TALL.height
             val tiles = when {
@@ -303,6 +336,49 @@ private fun TileRow(tiles: List<Tile>, m: Metrics, barSlot: Boolean) {
                 Text(tile.detail ?: " ", style = labelStyle, maxLines = 1)
             }
         }
+    }
+}
+
+@Composable
+private fun RowScope.StripMessage(title: String, detail: String?) {
+    Icon(R.drawable.ic_battery, WidgetPalette.iconNeutral, 18)
+    Spacer(GlanceModifier.width(8.dp))
+    Text(title, style = TextStyle(color = WidgetPalette.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.Medium), maxLines = 1)
+    if (detail != null) {
+        Spacer(GlanceModifier.width(8.dp))
+        Text(detail, modifier = GlanceModifier.defaultWeight(), style = TextStyle(color = WidgetPalette.textSecondary, fontSize = 10.sp), maxLines = 1)
+    }
+}
+
+@Composable
+private fun RowScope.Strip(
+    state: WidgetState.Ready,
+    config: GatewayConfig,
+    m: Metrics,
+    strip: StripMetrics,
+    ageText: String?,
+) {
+    val r = state.reading
+    val readings = (if (state.isLive) liveTiles(r, config, bars = false) else dailyTiles(r, state.averages))
+        .take(strip.readings)
+    val (glyph, glyphTint) = WidgetPalette.headerBatteryGlyph(r.batteryW)
+    Icon(glyph, glyphTint, m.headerIconDp)
+    Spacer(GlanceModifier.width(4.dp))
+    Text(
+        DisplayFormat.soc(r.soc),
+        style = TextStyle(color = WidgetPalette.textPrimary, fontSize = m.percentSp.sp, fontWeight = FontWeight.Bold),
+        maxLines = 1,
+    )
+    Spacer(GlanceModifier.width(12.dp))
+    readings.forEachIndexed { i, tile ->
+        if (i > 0) Spacer(GlanceModifier.defaultWeight())
+        Icon(tile.icon, tile.tint, m.iconDp)
+        Spacer(GlanceModifier.width(4.dp))
+        Text(tile.value, style = TextStyle(color = WidgetPalette.textPrimary, fontSize = m.valueSp.sp), maxLines = 1)
+    }
+    if (strip.showAge && ageText != null) {
+        Spacer(GlanceModifier.defaultWeight())
+        Text(ageText, style = TextStyle(color = WidgetPalette.textSecondary, fontSize = 10.sp), maxLines = 1)
     }
 }
 
