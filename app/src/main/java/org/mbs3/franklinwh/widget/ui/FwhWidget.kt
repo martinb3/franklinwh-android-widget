@@ -57,7 +57,9 @@ import org.mbs3.franklinwh.widget.data.WidgetStateFactory
 
 class FwhWidget : GlanceAppWidget() {
 
-    override val sizeMode = SizeMode.Responsive(setOf(NARROW_STRIP, STRIP, COMPACT, WIDE, TALL, LARGE))
+    // Exact, not Responsive: with Responsive, LocalSize is the matched bucket's size, so the
+    // width-based sizing in Metrics would only ever see the bucket widths.
+    override val sizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val appContext = context.applicationContext
@@ -76,12 +78,6 @@ class FwhWidget : GlanceAppWidget() {
     }
 
     companion object {
-        val COMPACT = DpSize(110.dp, 110.dp)
-        val WIDE = DpSize(250.dp, 110.dp)
-        val TALL = DpSize(110.dp, 220.dp)
-        val LARGE = DpSize(250.dp, 220.dp)
-        val NARROW_STRIP = DpSize(110.dp, 40.dp)
-        val STRIP = DpSize(250.dp, 40.dp)
 
         /** See provideGlance: changing this forces running sessions to recompose. */
         private val GENERATION_KEY = longPreferencesKey("generation")
@@ -206,9 +202,16 @@ private data class Metrics(
         /** Card padding, also applied in Body. */
         val CARD_PADDING = 14.dp
 
+        /** Below this height the widget is a one-row strip. */
+        private val STRIP_MAX_HEIGHT = 110.dp
+        /** At or above this height the widget uses the tall layouts. */
+        private val TALL_MIN_HEIGHT = 220.dp
+        /** At or above this width the widget uses the wide layouts. */
+        private val WIDE_MIN_WIDTH = 250.dp
+
         fun forSize(size: DpSize): Metrics {
-            if (size.height < FwhWidget.COMPACT.height) {
-                val narrow = size.width < FwhWidget.STRIP.width
+            if (size.height < STRIP_MAX_HEIGHT) {
+                val narrow = size.width < WIDE_MIN_WIDTH
                 return Metrics(
                     percentSp = 20, headerIconDp = 18, valueSp = 13, labelSp = 10, iconDp = 16,
                     bar = Bar.NONE, tiles = Tiles.TWO, spread = false, capacityBars = false,
@@ -218,8 +221,8 @@ private data class Metrics(
                     ),
                 )
             }
-            val wide = size.width >= FwhWidget.WIDE.width
-            val tall = size.height >= FwhWidget.TALL.height
+            val wide = size.width >= WIDE_MIN_WIDTH
+            val tall = size.height >= TALL_MIN_HEIGHT
             val tiles = when {
                 tall -> Tiles.GRID
                 wide -> Tiles.ROW_OF_FOUR
