@@ -1,9 +1,19 @@
 # FranklinWH Android Widget
 
 An Android home-screen widget that shows FranklinWH home-battery stats (state of
-charge, solar, load, grid and battery power, daily energy totals) by polling the
-aGate gateway directly over your local network. No cloud account, no MQTT, no
-credentials: the only configuration is the gateway's host and port.
+charge, solar, load, grid and battery power, daily energy totals). It reads them
+from one of two sources, picked on the configuration screen:
+
+- **Local** (the default): polls the aGate gateway directly over your local
+  network. No cloud account, no MQTT, no credentials: the only configuration
+  is the gateway's host and port. Works only on the home network.
+- **Cloud**: reads the same values through FranklinWH's app cloud API, so it
+  also works away from home. Needs your FranklinWH app account and the
+  gateway's serial number. This API is **unofficial and undocumented**: it is
+  the one the FranklinWH app uses, not a published partner API, and FranklinWH
+  may change or block it at any time, which would break this source.
+
+There is no automatic fallback between the two.
 
 This is an unofficial project. It is not affiliated with, endorsed by, or
 supported by FranklinWH.
@@ -42,9 +52,16 @@ Requires JDK 17 or newer and the Android SDK (`ANDROID_HOME` set, or a
    Android 12 and later the widget is placed straight away and shows "Tap to
    set up"; tap it. On older versions the screen opens on its own. It is also
    reachable from the "FranklinWH Widget" app icon.
-2. Enter the gateway's IP address or hostname on your LAN and its TCP port
-   (default 9000), then press **Test connection**. On success it shows the
-   battery level and solar power it read.
+2. Pick **Local (LAN)** or **Cloud**.
+   - Local: enter the gateway's IP address or hostname on your LAN and its
+     TCP port (default 9000).
+   - Cloud: enter your FranklinWH app account email and password, and the
+     gateway serial number. The serial is in the FranklinWH app under
+     **More → Site Address → SN**. Accounts that need multi-factor sign-in
+     are not supported.
+
+   Then press **Test connection**. On success it shows the battery level and
+   solar power it read.
 3. Press **Save**. The widget fetches a reading immediately.
 
 - Optional: **Solar capacity (kW)** and **Grid limit (kW)**. When set, the
@@ -97,9 +114,10 @@ The widget is built to be gentle on the phone's battery:
 
 - **Tap the widget** to fetch a fresh reading. This is the primary way to get
   live numbers and takes about a second on the LAN.
-- **A background job runs every 30 minutes**, only on an unmetered (Wi-Fi)
-  network, since the gateway is only reachable on the LAN anyway. Android
-  may defer it further when the phone is idle.
+- **A background job runs every 30 minutes**. In Local mode it runs only on
+  an unmetered (Wi-Fi) network, since the gateway is only reachable on the
+  LAN anyway; in Cloud mode it runs on any connected network. Android may
+  defer it further when the phone is idle.
 - A failed fetch keeps the last good reading and shows the error on the
   widget; the age text keeps counting.
 
@@ -114,8 +132,14 @@ reach the gateway's TCP port 9000 can read its data, including its serial number
 This app does not change that; it only reads what the gateway already exposes.
 Consider isolating the gateway on a network segment you trust.
 
-The app itself never needs the serial: it sends a placeholder and recovers the
-protocol's obfuscation key from the reply.
+In Local mode the app never needs the serial: it sends a placeholder and
+recovers the protocol's obfuscation key from the reply.
+
+In Cloud mode the app stores the account email and gateway serial, plus the
+MD5 hash of your password and the latest login token, never the password
+itself. The hash and token are encrypted with a key held in the Android
+Keystore, and app backup is off. The MD5 hash is enough to sign in to your
+FranklinWH account, so treat a compromised phone as a compromised account.
 
 ## Development
 
@@ -138,7 +162,10 @@ Keep real hostnames, IP addresses and serial numbers out of the repository.
 
 The local protocol implementation is a Kotlin port of
 [franklinwh-local](https://pypi.org/project/franklinwh-local/) (MIT License),
-which in turn builds on the original protocol work by voidstarr.
+which in turn builds on the original protocol work by voidstarr. The cloud
+source follows the endpoints used by the
+[franklinwh](https://github.com/richo/franklinwh-python) Python library (MIT
+License).
 
 ## License
 
