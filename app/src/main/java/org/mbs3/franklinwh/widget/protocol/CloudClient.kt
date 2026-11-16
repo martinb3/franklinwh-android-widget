@@ -63,13 +63,11 @@ class CloudClient(
         }
         val result = reply.optJSONObject("result") ?: throw CloudApiException("login reply has no result")
         val token = result.stringOrEmpty("token")
-        if (isTruthy(result.opt("mfaRequired")) ||
-            (token.isBlank() && result.stringOrEmpty("mfaToken").isNotBlank())
-        ) {
+        if (token.isNotBlank()) return token
+        if (isTruthy(result.opt("mfaRequired")) || result.stringOrEmpty("mfaToken").isNotBlank()) {
             throw CloudMfaRequiredException()
         }
-        if (token.isBlank()) throw CloudApiException("login reply has no token")
-        return token
+        throw CloudApiException("login reply has no token")
     }
 
     /**

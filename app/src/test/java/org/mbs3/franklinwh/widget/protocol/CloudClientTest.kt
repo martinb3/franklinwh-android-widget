@@ -70,7 +70,7 @@ class CloudClientTest {
     fun loginNeedingMfaIsDistinct() {
         val replies = listOf(
             """{"code":200,"result":{"token":"","mfaRequired":true,"mfaToken":"m"}}""",
-            """{"code":200,"result":{"token":"t","mfaRequired":true}}""",
+            """{"code":200,"result":{"token":null,"mfaRequired":true}}""",
             """{"code":200,"result":{"token":null,"mfaRequired":false,"mfaToken":"m"}}""",
         )
         for (reply in replies) {
@@ -78,6 +78,14 @@ class CloudClientTest {
                 server.enqueue(LOGIN, reply)
                 assertThrows(CloudMfaRequiredException::class.java) { server.client().login("a@example.com", "h") }
             }
+        }
+    }
+
+    @Test
+    fun loginWithTokenSucceedsEvenIfMfaIsFlagged() {
+        FakeCloudServer().use { server ->
+            server.enqueue(LOGIN, """{"code":200,"result":{"token":"t","mfaRequired":true}}""")
+            assertEquals("t", server.client().login("a@example.com", "h"))
         }
     }
 
