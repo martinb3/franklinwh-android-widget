@@ -1,0 +1,29 @@
+{
+  "code": 200,
+  "message": "Query success!",
+  "result": {
+    "currentWorkMode": 2,
+    "deviceStatus": 1,
+    "runtimeData": {
+      "soc": 19.105,
+      "fhpSoc": [23.2, 23.1],
+      "p_sun": 0.0,
+      "p_load": 5.528,
+      "p_uti": 0.022,
+      "p_fhp": 5.506,
+      "p_gen": 0.0,
+      "p_ev": null,
+      "kwh_sun": 24.391,
+      "kwh_load": 33.666,
+      "kwh_uti_in": 8.667,
+      "kwh_uti_out": 0.302,
+      "kwh_fhp_chg": 16.04,
+      "kwh_fhp_di": 16.949,
+      "kwh_gen": 0.001,
+      "t_amb": 14.4,
+      "timestamp": 0
+    }
+  },
+  "success": true,
+  "total": 1
+}
