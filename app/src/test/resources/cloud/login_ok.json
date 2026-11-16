@@ -1,0 +1,13 @@
+{
+  "code": 200,
+  "message": "ok",
+  "result": {
+    "token": "test-token-1",
+    "mfaRequired": false,
+    "mfaToken": null,
+    "mfaSetupRequired": false,
+    "mfaMethod": null
+  },
+  "success": true,
+  "total": 0
+}

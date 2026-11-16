@@ -8,6 +8,15 @@
     <string name="widget_dashboard_label">Energy dashboard</string>
     <string name="widget_dashboard_description">Three rows and up: larger tiles, and optional solar and grid capacity bars</string>
     <string name="config_title">Gateway</string>
+    <string name="config_source_local">Local (LAN)</string>
+    <string name="config_source_cloud">Cloud</string>
+    <string name="config_cloud_account">FranklinWH account email</string>
+    <string name="config_cloud_password">Password</string>
+    <string name="config_cloud_password_saved">Saved; leave blank to keep</string>
+    <string name="config_cloud_serial">Gateway serial (SN)</string>
+    <string name="config_cloud_serial_hint">App: More → Site Address → SN</string>
+    <string name="config_cloud_invalid">Enter the account email and the gateway serial.</string>
+    <string name="config_cloud_password_needed">Enter the account password.</string>
     <string name="config_host">Host or IP address</string>
     <string name="config_host_hint">192.0.2.10</string>
     <string name="config_port">Port</string>
