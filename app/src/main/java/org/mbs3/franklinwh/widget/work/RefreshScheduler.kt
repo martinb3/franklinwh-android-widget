@@ -10,6 +10,7 @@ import androidx.work.OutOfQuotaPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
+import org.mbs3.franklinwh.widget.data.GatewayConfig
 import org.mbs3.franklinwh.widget.data.WidgetStateFactory
 import java.util.concurrent.TimeUnit
 
@@ -19,14 +20,21 @@ object RefreshScheduler {
     private const val REDRAW = "redraw"
     private const val PERIOD_MINUTES = 30L
 
-    /** The gateway is on the LAN, so only try on an unmetered (normally Wi-Fi) network. */
-    private val lanConstraints = Constraints.Builder()
-        .setRequiredNetworkType(NetworkType.UNMETERED)
-        .build()
+    /**
+     * The local gateway is on the LAN, so only try on an unmetered (normally Wi-Fi) network; the
+     * cloud is reachable from any connected network.
+     */
+    private fun constraints(context: Context): Constraints {
+        val network = when (GatewayConfig.load(context).source) {
+            GatewayConfig.Source.LOCAL -> NetworkType.UNMETERED
+            GatewayConfig.Source.CLOUD -> NetworkType.CONNECTED
+        }
+        return Constraints.Builder().setRequiredNetworkType(network).build()
+    }
 
     fun ensurePeriodic(context: Context) {
         val request = PeriodicWorkRequestBuilder<RefreshWorker>(PERIOD_MINUTES, TimeUnit.MINUTES)
-            .setConstraints(lanConstraints)
+            .setConstraints(constraints(context))
             .build()
         WorkManager.getInstance(context)
             .enqueueUniquePeriodicWork(PERIODIC, ExistingPeriodicWorkPolicy.UPDATE, request)
@@ -36,7 +44,7 @@ object RefreshScheduler {
     fun refreshNow(context: Context) {
         val request = OneTimeWorkRequestBuilder<RefreshWorker>()
             .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
-            .setConstraints(lanConstraints)
+            .setConstraints(constraints(context))
             .setInputData(workDataOf(RefreshWorker.KEY_EXPEDITED to true))
             .build()
         WorkManager.getInstance(context).enqueueUniqueWork(NOW, ExistingWorkPolicy.KEEP, request)
