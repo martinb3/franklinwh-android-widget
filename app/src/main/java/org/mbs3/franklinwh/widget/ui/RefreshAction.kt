@@ -18,6 +18,7 @@ class RefreshAction : ActionCallback {
             ReadingStore(context).setRefreshing(System.currentTimeMillis())
             FwhBaseWidget.redrawAll(context)
             RefreshScheduler.refreshNow(context)
+            RefreshScheduler.redrawWhenRefreshingExpires(context)
         }
     }
 }
