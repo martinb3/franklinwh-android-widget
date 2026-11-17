@@ -15,6 +15,7 @@
     <string name="config_cloud_password_saved">Saved; leave blank to keep</string>
     <string name="config_cloud_serial">Gateway serial (SN)</string>
     <string name="config_cloud_serial_hint">App: More → Site Address → SN</string>
+    <string name="config_cloud_background_help">Updates run in the background. If the widget stops updating on mobile data or metered Wi-Fi, open Android\'s settings for this app, then Mobile data &amp; Wi-Fi, and turn on Background data. If Data Saver is on, also turn on Unrestricted mobile data usage.</string>
     <string name="config_cloud_invalid">Enter the account email and the gateway serial.</string>
     <string name="config_cloud_password_needed">Enter the account password.</string>
     <string name="config_host">Host or IP address</string>

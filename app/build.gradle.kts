@@ -1,7 +1,18 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     // Compose compiler for Glance's @Composable widget content.
     alias(libs.plugins.kotlin.compose)
+}
+
+// Release signing is read from a properties file kept out of the repository: the path in
+// FWH_KEYSTORE_PROPERTIES, or keystore.properties in the project root. It holds storeFile,
+// storePassword, keyAlias and keyPassword.
+val keystorePropertiesFile: File =
+    System.getenv("FWH_KEYSTORE_PROPERTIES")?.let(::File) ?: rootProject.file("keystore.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.isFile) keystorePropertiesFile.inputStream().use(::load)
 }
 
 android {
@@ -16,9 +27,23 @@ android {
         versionName = "0.1.0"
     }
 
+    signingConfigs {
+        if (keystorePropertiesFile.isFile) {
+            create("release") {
+                // A relative storeFile is resolved against the properties file's directory.
+                storeFile = keystorePropertiesFile.resolveSibling(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            // Null without a keystore, which leaves the release APK unsigned.
+            signingConfig = signingConfigs.findByName("release")
         }
     }
 

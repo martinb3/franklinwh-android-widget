@@ -18,6 +18,7 @@ object RefreshScheduler {
     private const val PERIODIC = "refresh-periodic"
     private const val NOW = "refresh-now"
     private const val REDRAW = "redraw"
+    private const val REFRESHING_EXPIRY = "refreshing-expiry"
     private const val PERIOD_MINUTES = 30L
 
     /**
@@ -58,8 +59,21 @@ object RefreshScheduler {
         WorkManager.getInstance(context).enqueueUniqueWork(REDRAW, ExistingWorkPolicy.REPLACE, request)
     }
 
+    /**
+     * Redraws once a refresh request counts as abandoned. The refresh itself waits for a network,
+     * so without this the indicator stays on screen for as long as there is none.
+     */
+    fun redrawWhenRefreshingExpires(context: Context) {
+        val request = OneTimeWorkRequestBuilder<RedrawWorker>()
+            .setInitialDelay(WidgetStateFactory.REFRESHING_TIMEOUT_MS + 5_000, TimeUnit.MILLISECONDS)
+            .build()
+        WorkManager.getInstance(context)
+            .enqueueUniqueWork(REFRESHING_EXPIRY, ExistingWorkPolicy.REPLACE, request)
+    }
+
     fun cancelAll(context: Context) {
         val wm = WorkManager.getInstance(context)
+        wm.cancelUniqueWork(REFRESHING_EXPIRY)
         wm.cancelUniqueWork(PERIODIC)
         wm.cancelUniqueWork(NOW)
         wm.cancelUniqueWork(REDRAW)

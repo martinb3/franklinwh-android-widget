@@ -121,6 +121,15 @@ The widget is built to be gentle on the phone's battery:
 - A failed fetch keeps the last good reading and shows the error on the
   widget; the age text keeps counting.
 
+Every fetch, including the one a tap starts, runs in the background. Android
+blocks background traffic on metered networks (mobile data, and Wi-Fi that
+Android treats as metered, such as some in-flight or hotspot networks) for an
+app whose background data is switched off. In Cloud mode the widget then
+keeps showing its last reading and never updates. If that happens, open
+**Settings → Apps → FranklinWH Widget → Mobile data & Wi-Fi** and turn on
+**Background data**. If Data Saver is on, also turn on **Unrestricted mobile
+data usage**. Local mode is unaffected, since it only uses unmetered Wi-Fi.
+
 There is deliberately no always-on connection and no persistent notification.
 A "live while the screen is on" mode that polls every 30 seconds is planned
 as an opt-in.
