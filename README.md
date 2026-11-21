@@ -149,8 +149,10 @@ The widget is built to be gentle on the phone's battery:
   an unmetered (Wi-Fi) network, since the gateway is only reachable on the
   LAN anyway; in Cloud mode it runs on any connected network. Android may
   defer it further when the phone is idle.
-- A failed fetch keeps the last good reading and shows the error on the
-  widget; the age text keeps counting.
+- A failed fetch keeps the last good reading on screen, and the age text
+  shows when it was taken. The error itself appears only while the widget
+  has no reading at all ("No data yet"), and from **Test connection** on the
+  configuration screen.
 
 Every fetch, including the one a tap starts, runs in the background. Android
 blocks background traffic on metered networks (mobile data, and Wi-Fi that
