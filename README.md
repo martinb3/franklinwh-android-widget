@@ -30,20 +30,36 @@ daily view, in dark and light mode:
 
 ## Status
 
-Alpha. Builds, passes its tests, and has been exercised on an Android 16
-emulator against a real gateway. Not yet used day to day on a phone.
+Alpha. It is in daily use on one phone with one aGate, and has also run on an
+Android 16 emulator. Nothing else has been tested: other gateway hardware or
+firmware, other phones and launchers, and accounts that need multi-factor
+sign-in may not work. Reports are welcome in the
+[issue tracker](https://github.com/martinb3/franklinwh-android-widget/issues).
 
 ## Install
 
-Sideload only for now. Build the debug APK and install it with `adb`:
+Sideload only. It is not on Google Play or F-Droid.
+
+1. On the phone, download the `.apk` from the
+   [latest release](https://github.com/martinb3/franklinwh-android-widget/releases/latest).
+2. Open the downloaded file. Android asks you to allow your browser or file
+   manager to install unknown apps; allow it, then install.
+3. Follow [Setup](#setup).
+
+Minimum Android version is 8.0 (API 26). Each release lists the APK's SHA-256
+so the download can be checked. Updates are manual: install a newer APK over
+the old one, and settings and placed widgets are kept.
+
+To build it yourself instead, with JDK 17 or newer and the Android SDK
+(`ANDROID_HOME` set, or a `local.properties` with `sdk.dir`):
 
 ```sh
 ./gradlew assembleDebug
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Requires JDK 17 or newer and the Android SDK (`ANDROID_HOME` set, or a
-`local.properties` with `sdk.dir`). Minimum Android version is 8.0 (API 26).
+An APK you build yourself is signed with a different key from the released
+one, so neither can be installed over the other; uninstall first.
 
 ## Setup
 
@@ -166,6 +182,12 @@ FWH_HOST=192.0.2.10 ./gradlew :app:testDebugUnitTest --tests '*GatewayLiveTest*'
 ```
 
 Keep real hostnames, IP addresses and serial numbers out of the repository.
+
+`./gradlew assembleRelease` signs the APK when a `keystore.properties` file
+exists in the project root, or at the path in `FWH_KEYSTORE_PROPERTIES`. It
+holds `storeFile`, `storePassword`, `keyAlias` and `keyPassword`; a relative
+`storeFile` is resolved against the properties file's directory. Without the
+file the release APK is left unsigned.
 
 ## Attribution
 
