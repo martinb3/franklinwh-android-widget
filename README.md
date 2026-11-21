@@ -88,6 +88,21 @@ one, so neither can be installed over the other; uninstall first.
 The same screen is reachable from the app's launcher icon and from the
 launcher's "reconfigure" action on the widget.
 
+## What Local mode needs
+
+- Only the phone and the gateway. There is no MQTT broker, Home Assistant
+  instance, bridge or server of your own to run.
+- A network path from the phone to the gateway's TCP port 9000. Normally that
+  means the phone is on the home Wi-Fi. If the gateway sits on a separate
+  VLAN or IoT network, the firewall has to let the phone reach it.
+- A gateway address that does not change. Give the aGate a DHCP reservation
+  on your router, or the configured address stops working when it moves.
+
+Local mode has been tested against a single aGate. It is not known whether
+every aGate model and firmware version answers on port 9000. If **Test
+connection** fails with the right address, use Cloud mode, and please open an
+issue saying which gateway you have.
+
 ## What the widget shows
 
 The widget has two views and picks one by the age of its data:
