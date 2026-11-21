@@ -30,20 +30,36 @@ daily view, in dark and light mode:
 
 ## Status
 
-Alpha. Builds, passes its tests, and has been exercised on an Android 16
-emulator against a real gateway. Not yet used day to day on a phone.
+Alpha. It is in daily use on one phone with one aGate, and has also run on an
+Android 16 emulator. Nothing else has been tested: other gateway hardware or
+firmware, other phones and launchers, and accounts that need multi-factor
+sign-in may not work. Reports are welcome in the
+[issue tracker](https://github.com/martinb3/franklinwh-android-widget/issues).
 
 ## Install
 
-Sideload only for now. Build the debug APK and install it with `adb`:
+Sideload only. It is not on Google Play or F-Droid.
+
+1. On the phone, download the `.apk` from the
+   [latest release](https://github.com/martinb3/franklinwh-android-widget/releases/latest).
+2. Open the downloaded file. Android asks you to allow your browser or file
+   manager to install unknown apps; allow it, then install.
+3. Follow [Setup](#setup).
+
+Minimum Android version is 8.0 (API 26). Each release lists the APK's SHA-256
+so the download can be checked. Updates are manual: install a newer APK over
+the old one, and settings and placed widgets are kept.
+
+To build it yourself instead, with JDK 17 or newer and the Android SDK
+(`ANDROID_HOME` set, or a `local.properties` with `sdk.dir`):
 
 ```sh
 ./gradlew assembleDebug
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Requires JDK 17 or newer and the Android SDK (`ANDROID_HOME` set, or a
-`local.properties` with `sdk.dir`). Minimum Android version is 8.0 (API 26).
+An APK you build yourself is signed with a different key from the released
+one, so neither can be installed over the other; uninstall first.
 
 ## Setup
 
@@ -71,6 +87,21 @@ Requires JDK 17 or newer and the Android SDK (`ANDROID_HOME` set, or a
 
 The same screen is reachable from the app's launcher icon and from the
 launcher's "reconfigure" action on the widget.
+
+## What Local mode needs
+
+- Only the phone and the gateway. There is no MQTT broker, Home Assistant
+  instance, bridge or server of your own to run.
+- A network path from the phone to the gateway's TCP port 9000. Normally that
+  means the phone is on the home Wi-Fi. If the gateway sits on a separate
+  VLAN or IoT network, the firewall has to let the phone reach it.
+- A gateway address that does not change. Give the aGate a DHCP reservation
+  on your router, or the configured address stops working when it moves.
+
+Local mode has been tested against a single aGate. It is not known whether
+every aGate model and firmware version answers on port 9000. If **Test
+connection** fails with the right address, use Cloud mode, and please open an
+issue saying which gateway you have.
 
 ## What the widget shows
 
@@ -102,8 +133,7 @@ There are three widgets in the picker, sharing one setup and one set of data:
 After the first setup, more widgets are added without the setup screen on
 Android 12 and later.
 
-Display rules follow the same conventions as the pixel-clock bridge this was
-modelled on: power is always kW with one decimal; anything under 100 W reads
+Display rules: power is always kW with one decimal; anything under 100 W reads
 as an unsigned `0.0 kW`; grid and battery are signed, `+` when supplying the
 house (grid importing, battery discharging) and `−` when absorbing (grid
 exporting, battery charging); solar and load are unsigned.
@@ -118,8 +148,10 @@ The widget is built to be gentle on the phone's battery:
   an unmetered (Wi-Fi) network, since the gateway is only reachable on the
   LAN anyway; in Cloud mode it runs on any connected network. Android may
   defer it further when the phone is idle.
-- A failed fetch keeps the last good reading and shows the error on the
-  widget; the age text keeps counting.
+- A failed fetch keeps the last good reading on screen, and the age text
+  shows when it was taken. The error itself appears only while the widget
+  has no reading at all ("No data yet"), and from **Test connection** on the
+  configuration screen.
 
 Every fetch, including the one a tap starts, runs in the background. Android
 blocks background traffic on metered networks (mobile data, and Wi-Fi that
@@ -166,6 +198,12 @@ FWH_HOST=192.0.2.10 ./gradlew :app:testDebugUnitTest --tests '*GatewayLiveTest*'
 ```
 
 Keep real hostnames, IP addresses and serial numbers out of the repository.
+
+`./gradlew assembleRelease` signs the APK when a `keystore.properties` file
+exists in the project root, or at the path in `FWH_KEYSTORE_PROPERTIES`. It
+holds `storeFile`, `storePassword`, `keyAlias` and `keyPassword`; a relative
+`storeFile` is resolved against the properties file's directory. Without the
+file the release APK is left unsigned.
 
 ## Attribution
 
