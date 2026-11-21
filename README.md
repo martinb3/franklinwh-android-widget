@@ -133,8 +133,7 @@ There are three widgets in the picker, sharing one setup and one set of data:
 After the first setup, more widgets are added without the setup screen on
 Android 12 and later.
 
-Display rules follow the same conventions as the pixel-clock bridge this was
-modelled on: power is always kW with one decimal; anything under 100 W reads
+Display rules: power is always kW with one decimal; anything under 100 W reads
 as an unsigned `0.0 kW`; grid and battery are signed, `+` when supplying the
 house (grid importing, battery discharging) and `−` when absorbing (grid
 exporting, battery charging); solar and load are unsigned.
